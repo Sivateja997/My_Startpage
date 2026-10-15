@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Startpage</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- DEDICATED BACKGROUND & DIMMING LAYERS -->
+    <div class="bg-layer" id="bg-layer"></div>
+    <div class="bg-overlay" id="bg-overlay"></div>
+
+    <!-- TABLISS BOTTOM-LEFT WALLPAPER & ZEN CONTROLS -->
+    <div class="tabliss-controls" id="tabliss-controls">
+        <button class="tabliss-btn" id="next-wp-btn" onclick="nextTablissWallpaper()" title="Next Tabliss Wallpaper">↻ Next</button>
+        <button class="tabliss-btn" id="lock-wp-btn" onclick="toggleLockWallpaper()" title="Pause/Lock Wallpaper">🔓 Rotate</button>
+        <button class="tabliss-btn" id="zen-mode-btn" onclick="toggleZenMode()" title="Hide Shortcuts & Search (Zen Mode)">👁️ Zen</button>
+        <span class="tabliss-credit" id="tabliss-credit">Tabliss Official</span>
+    </div>
+
+    <!-- SHORTCUT CONTEXT MENU -->
+    <div class="custom-context-menu" id="context-menu">
+        <div class="menu-item" onclick="executeMenuAction('new-tab')">Open in new tab</div>
+        <div class="menu-item" onclick="executeMenuAction('new-window')">Open in new window</div>
+        <div class="menu-item" onclick="executeMenuAction('private')">Open in new private window</div>
+        <div class="context-divider"></div>
+        <div class="menu-item" onclick="executeMenuAction('edit')">Edit</div>
+        <div class="menu-item" onclick="executeMenuAction('image')">Set custom image</div>
+        <div class="context-divider"></div>
+        <div class="menu-item" onclick="executeMenuAction('delete')" style="color: #ff5b5b;">Move to Trash</div>
+    </div>
+    <input type="file" id="shortcut-image-input" accept="image/*" onchange="applyCustomImage(event)">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar-hitbox" id="sb-hitbox"></div>
+    <div class="left-sidebar" id="left-sidebar"></div>
+
+    <!-- CLOCK & DATE WIDGET -->
+    <div class="time-widget" id="time-widget">
+        <div class="time-row">
+            <span class="time-main" id="time-h">2:23</span><span class="time-ampm" id="time-ampm">PM</span>
+        </div>
+        <div class="date-sub" id="date-sub">Wednesday, Oct 14</div>
+    </div>
+    
+    <!-- WEATHER WIDGET -->
+    <div class="weather-widget" id="weather-widget">
+        <div class="weather-header">
+            <span id="weather-loc-name">Lee's Summit</span>
+            <div class="weather-menu-trigger" id="weather-menu-btn" onclick="toggleWeatherMenu(event)" title="Weather Options">
+                <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </div>
+            <div class="weather-dropdown" id="weather-dropdown">
+                <div onclick="toggleWeatherUnit(event)">Switch to Celsius</div>
+                <div onclick="openWeatherLocModal(event)">Change location</div>
+            </div>
+        </div>
+        <div class="weather-body">
+            <div class="weather-icon-box" id="w-icon">⛅</div>
+            <div class="weather-details">
+                <span class="weather-temp" id="w-temp">--°</span>
+                <span class="weather-cond" id="w-cond">Loading...</span>
+                <span class="weather-highlow" id="w-highlow">↑--° ↓--°</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="content-container" id="main-content">
+        <div class="grid" id="shortcut-grid"></div>
+        
+        <div class="search-container">
+            <form id="search-form" onsubmit="handleSearchSubmit(event)">
+                <div class="search-wrapper">
+                    <button type="button" class="engine-btn" id="engine-btn" onclick="toggleEngineMenu(event)" title="Switch Search Engine">
+                        <span id="engine-label">G</span> ▾
+                    </button>
+                    <input type="text" id="search-input" class="search-box" placeholder="Search the web or filter shortcuts..." autofocus autocomplete="off" oninput="filterShortcutsLive(this.value)" onkeydown="handleSearchKeydown(event)">
+                    <span class="search-kbd">/</span>
+                </div>
+            </form>
+            <div class="engine-dropdown" id="engine-dropdown">
+                <div onclick="setSearchEngine('google')"><span>Google</span><small>!g</small></div>
+                <div onclick="setSearchEngine('ddg')"><span>DuckDuckGo</span><small>!ddg</small></div>
+                <div onclick="setSearchEngine('youtube')"><span>YouTube</span><small>!yt</small></div>
+                <div onclick="setSearchEngine('github')"><span>GitHub</span><small>!gh</small></div>
+                <div onclick="setSearchEngine('perplexity')"><span>Perplexity AI</span><small>!ai</small></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOMIZE PANEL -->
+    <button class="customize-btn" onclick="toggleMenu(event)">✦ Customize</button>
+    <div class="side-panel" id="side-panel">
+        <div class="panel-header">
+            <span class="panel-title">Customize Startpage</span>
+            <button class="close-btn" onclick="toggleMenu(event)">✕</button>
+        </div>
+        
+        <div class="setting-row">
+            <label class="switch"><input type="checkbox" id="toggle-sidebar" onchange="applySettings()"><span class="slider"></span></label>
+            <div class="setting-text"><span>Show sidebar</span></div>
+        </div>
+        <div class="setting-row">
+            <label class="switch"><input type="checkbox" id="toggle-sidebar-auto" onchange="applySettings()"><span class="slider"></span></label>
+            <div class="setting-text"><span>Auto-hide sidebar</span></div>
+        </div>
+        <div class="setting-row">
+            <label class="switch"><input type="checkbox" id="toggle-24h" onchange="applySettings()"><span class="slider"></span></label>
+            <div class="setting-text"><span>24-Hour Clock</span><small>Use military time format</small></div>
+        </div>
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 18px 0;">
+
+        <div class="setting-row">
+            <label class="switch"><input type="checkbox" id="toggle-wp" onchange="applySettings()"><span class="slider"></span></label>
+            <div class="setting-text"><span>Background Wallpaper</span><small>Tabliss 4K, Custom File, or Mesh</small></div>
+        </div>
+
+        <div class="wp-controls-box" id="wp-controls-box">
+            <div class="wp-grid">
+                <div class="wp-container">
+                    <div class="wp-item wp-tabliss" id="mode-tabliss" onclick="selectWallpaperMode('tabliss')">🏞️</div>
+                    <div class="wp-label">Tabliss 4K</div>
+                </div>
+                <div class="wp-container">
+                    <div class="wp-item wp-add" id="mode-custom" onclick="document.getElementById('file-input').click()">+</div>
+                    <div class="wp-label">Upload Image</div>
+                    <input type="file" id="file-input" accept="image/*" onchange="setCustomWallpaper(event)">
+                </div>
+                <div class="wp-container">
+                    <div class="wp-item wp-mesh" id="mode-mesh" onclick="selectWallpaperMode('mesh')">✦</div>
+                    <div class="wp-label">Mesh Dark</div>
+                </div>
+            </div>
+
+            <div id="tabliss-settings-group">
+                <div class="panel-control-group">
+                    <label><span>Rotation Frequency</span></label>
+                    <select class="panel-select" id="wp-frequency" onchange="applySettings()">
+                        <option value="15min">Every 15 Minutes (Tabliss Default)</option>
+                        <option value="newtab">Every New Tab</option>
+                        <option value="hourly">Every Hour</option>
+                        <option value="daily">Daily</option>
+                        <option value="locked">Paused / Locked</option>
+                    </select>
+                </div>
+
+                <div class="panel-control-group">
+                    <label><span>Optional Unsplash Access Key (Live 546+ Pool)</span></label>
+                    <input type="password" class="panel-input" id="unsplash-key" placeholder="Leave blank for built-in Tabliss 4K pool" onchange="applySettings()">
+                </div>
+            </div>
+
+            <div class="panel-control-group">
+                <label><span>Blur</span><span id="blur-val">0px</span></label>
+                <input type="range" class="panel-range" id="wp-blur" min="0" max="24" value="0" oninput="applyVisualFilters()">
+            </div>
+
+            <div class="panel-control-group">
+                <label><span>Dimness (Luminosity)</span><span id="dim-val">25%</span></label>
+                <input type="range" class="panel-range" id="wp-dim" min="0" max="85" value="25" oninput="applyVisualFilters()">
+            </div>
+        </div>
+
+        <div class="setting-row">
+            <label class="switch"><input type="checkbox" id="toggle-weather" onchange="applySettings()"><span class="slider"></span></label>
+            <div class="setting-text"><span>Weather</span><small>Today's forecast at a glance</small></div>
+        </div>
+        
+        <div class="setting-row" style="margin-top: 16px;">
+            <label class="switch"><input type="checkbox" id="toggle-shortcuts" onchange="applySettings()"><span class="slider"></span></label>
+            <div class="setting-text"><span>Main Shortcuts</span></div>
+        </div>
+        <div class="setting-row">
+            <label class="switch"><input type="checkbox" id="toggle-svg-icons" onchange="applySettings()"><span class="slider"></span></label>
+            <div class="setting-text"><span>Minimalist SVG Icons</span><small>Unified white Simple Icons</small></div>
+        </div>
+        <div style="margin-left: 57px; margin-bottom: 18px;">
+            <button class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="resetSort()">Sort Alphabetically</button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 18px 0;">
+        <div class="setting-row">
+            <div class="setting-text">
+                <span>GitHub `data.json` Sync</span>
+                <small>Auto-detects repo commits & exports</small>
+            </div>
+        </div>
+        <div style="margin-left: 57px; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+            <button class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="exportData()">⬇️ Export data.json</button>
+            <button class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="document.getElementById('import-file').click()">⬆️ Import</button>
+            <button class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="loadFromGitHubJSON(true)">🔄 Force Sync GitHub</button>
+            <input type="file" id="import-file" style="display:none" accept=".json" onchange="importData(event)">
+        </div>
+    </div>
+
+    <!-- ADD/EDIT SITE MODAL -->
+    <div class="modal-overlay" id="add-site-overlay">
+        <div class="add-site-modal" onclick="event.stopPropagation()">
+            <div class="modal-header-add">
+                <h3 id="modal-title">Add site</h3>
+                <button onclick="closeAddModal()">✕</button>
+            </div>
+            <div class="input-group"><label>Name</label><input type="text" id="new-site-name" autocomplete="off" onkeydown="handleEnter(event, 'site')"></div>
+            <div class="input-group"><label>URL</label><input type="text" id="new-site-url" autocomplete="off" onkeydown="handleEnter(event, 'site')"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+                <button class="btn-save" onclick="saveNewSite()">Save changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- WEATHER LOCATION MODAL -->
+    <div class="modal-overlay" id="weather-loc-overlay">
+        <div class="add-site-modal" onclick="event.stopPropagation()">
+            <div class="modal-header-add">
+                <h3>Change location</h3>
+                <button onclick="closeWeatherLocModal()">✕</button>
+            </div>
+            <div class="input-group">
+                <label>City Name</label>
+                <input type="text" id="new-weather-loc" placeholder="e.g. Kansas City" autocomplete="off" onkeydown="handleEnter(event, 'weather')">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeWeatherLocModal()">Cancel</button>
+                <button class="btn-save" onclick="saveWeatherLocation()">Save changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GLASSMORPHIC TOAST CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // --- 0. HARDCODED TABLISS OFFICIAL 4K UNSPLASH POOL (COLLECTION 1053828) ---
+        const TABLISS_WALLPAPERS = [
+            { url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2560&q=85", credit: "Bailey Zindel • Yosemite Valley" },
+            { url: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=2560&q=85", credit: "v2osk • Misty Highlands" },
+            { url: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2560&q=85", credit: "David Marcu • Ciucaș Peak" },
+            { url: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=2560&q=85", credit: "Pietro De Grandi • Pragser Wildsee" },
+            { url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=2560&q=85", credit: "Benjamin Voros • Starry Mountains" },
+            { url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2560&q=85", credit: "Kalen Emsley • Mountain Valley" },
+            { url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2560&q=85", credit: "Sean Oulashin • Tropical Coast" },
+            { url: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=2560&q=85", credit: "Matt Hardy • Ocean Waves" },
+            { url: "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=2560&q=85", credit: "Garrett Parker • Moraine Lake" },
+            { url: "https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=2560&q=85", credit: "Sergei Akulich • Deep Forest" },
+            { url: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=2560&q=85", credit: "Robert Lukeman • Green Crag" },
+            { url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2560&q=85", credit: "Lukasz Szmigiel • Sunlit Woods" },
+            { url: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=2560&q=85", credit: "Mark Boss • Desert Dunes" },
+            { url: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=2560&q=85", credit: "Blake Verdoorn • Multnomah Falls" },
+            { url: "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=2560&q=85", credit: "Quino Al • Golden Horizon" },
+            { url: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=2560&q=85", credit: "Vincent Guth • Aurora Borealis" },
+            { url: "https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?auto=format&fit=crop&w=2560&q=85", credit: "Goutham Krishna • Misty Pines" },
+            { url: "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=2560&q=85", credit: "pine watt • Alpine Winter" }
+        ];
+
+        const MESH_GRADIENT = `
+            radial-gradient(at 15% 15%, rgba(92, 85, 233, 0.20) 0px, transparent 50%),
+            radial-gradient(at 85% 18%, rgba(144, 89, 255, 0.16) 0px, transparent 50%),
+            radial-gradient(at 50% 85%, rgba(56, 189, 248, 0.10) 0px, transparent 55%)
+        `;
+
+        // --- 1. INDEXED-DB STORAGE ENGINE ---
+        const DB_NAME = 'MyStartpageDB';
+        const DB_STORE = 'settings';
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function dbSet(key, value) {
+            try {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(DB_STORE, 'readwrite');
+                    tx.objectStore(DB_STORE).put(value, key);
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => reject(tx.error);
+                });
+            } catch (e) {
+                try { localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value)); } catch(err){}
+            }
+        }
+
+        async function dbGet(key) {
+            try {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(DB_STORE, 'readonly');
+                    const req = tx.objectStore(DB_STORE).get(key);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            } catch (e) {
+                let val = localStorage.getItem(key);
+                try { return JSON.parse(val); } catch(err) { return val; }
+            }
+        }
+
+        // --- 2. STATE & TABLISS WALLPAPER ENGINE ---
+        let prefs = {
+            wpOn: true,
+            wpMode: 'tabliss',
+            wpFreq: '15min',
+            wpBlur: 0,
+            wpDim: 25,
+            unsplashKey: '',
+            weatherOn: true,
+            shortcutsOn: true,
+            sbOn: true,
+            sbAuto: true,
+            manualSort: false,
+            svgIcons: false,
+            use24h: false,
+            searchEngine: 'google'
+        };
+        let weatherPrefs = { lat: 38.9136, lon: -94.3788, name: "Lee's Summit", unit: "fahrenheit" };
+        let mainShortcuts = [];
+        let sbShortcuts = [];
+
+        const SEARCH_ENGINES = {
+            google: { label: 'G', name: 'Google', url: 'https://www.google.com/search?q=' },
+            ddg: { label: 'DDG', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' },
+            youtube: { label: 'YT', name: 'YouTube', url: 'https://www.youtube.com/results?search_query=' },
+            github: { label: 'GH', name: 'GitHub', url: 'https://github.com/search?q=' },
+            perplexity: { label: 'AI', name: 'Perplexity', url: 'https://www.perplexity.ai/search?q=' }
+        };
+
+        const SIMPLE_ICON_SLUGS = {
+            'youtube.com': 'youtube',
+            'music.youtube.com': 'youtubemusic',
+            'netflix.com': 'netflix',
+            'mail.google.com': 'gmail',
+            'amazon.com': 'amazon',
+            'tv.apple.com': 'appletv',
+            'disneyplus.com': 'disneyplus',
+            'facebook.com': 'facebook',
+            'play.max.com': 'hbomax',
+            'hulu.com': 'hulu',
+            'outlook.live.com': 'microsoftoutlook',
+            'walmart.com': 'walmart',
+            'web.whatsapp.com': 'whatsapp',
+            'messenger.com': 'messenger',
+            'open.spotify.com': 'spotify'
+        };
+
+        function showToast(message, undoCallback = null) {
+            const container = document.getElementById('toast-container');
+            container.innerHTML = '';
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span>${message}</span>`;
+
+            if (undoCallback) {
+                const btn = document.createElement('button');
+                btn.className = 'toast-undo-btn';
+                btn.innerText = 'Undo';
+                btn.onclick = () => {
+                    undoCallback();
+                    toast.remove();
+                };
+                toast.appendChild(btn);
+            }
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                if (toast.parentElement) toast.remove();
+            }, 4500);
+        }
+
+        function getRotationIntervalMs(freq) {
+            if (freq === 'newtab') return 0;
+            if (freq === '15min') return 15 * 60 * 1000;
+            if (freq === 'hourly') return 60 * 60 * 1000;
+            if (freq === 'daily') return 24 * 60 * 60 * 1000;
+            return Infinity;
+        }
+
+        async function resolveTablissWallpaper(forceNext = false) {
+            let state = JSON.parse(localStorage.getItem('myTablissState')) || {
+                index: Math.floor(Math.random() * TABLISS_WALLPAPERS.length),
+                lastChanged: 0,
+                liveUrl: null,
+                liveCredit: null
+            };
+
+            const now = Date.now();
+            const interval = getRotationIntervalMs(prefs.wpFreq);
+            const shouldRotate = forceNext || (prefs.wpFreq !== 'locked' && (now - state.lastChanged >= interval));
+
+            if (shouldRotate || (!state.liveUrl && state.lastChanged === 0)) {
+                if (prefs.unsplashKey && prefs.unsplashKey.trim().length > 10) {
+                    try {
+                        const res = await fetch(`https://api.unsplash.com/photos/random?collections=1053828&orientation=landscape&client_id=${prefs.unsplashKey.trim()}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            state.liveUrl = data.urls.full || data.urls.regular;
+                            state.liveCredit = `${data.user.name} • Tabliss Official`;
+                            state.lastChanged = now;
+                            localStorage.setItem('myTablissState', JSON.stringify(state));
+                            return { url: state.liveUrl, credit: state.liveCredit };
+                        }
+                    } catch (e) {
+                        console.warn("Unsplash API fallback to hardcoded Tabliss pool:", e);
+                    }
+                }
+
+                state.index = (state.index + 1 + Math.floor(Math.random() * (TABLISS_WALLPAPERS.length - 1))) % TABLISS_WALLPAPERS.length;
+                state.liveUrl = null;
+                state.liveCredit = null;
+                state.lastChanged = now;
+                localStorage.setItem('myTablissState', JSON.stringify(state));
+            }
+
+            if (state.liveUrl) return { url: state.liveUrl, credit: state.liveCredit };
+            return TABLISS_WALLPAPERS[state.index % TABLISS_WALLPAPERS.length];
+        }
+
+        async function nextTablissWallpaper() {
+            if (prefs.wpMode !== 'tabliss') {
+                prefs.wpMode = 'tabliss';
+                localStorage.setItem('myPrefs', JSON.stringify(prefs));
+            }
+            const item = await resolveTablissWallpaper(true);
+            document.getElementById('bg-layer').style.backgroundImage = `url('${item.url}')`;
+            document.getElementById('tabliss-credit').innerText = item.credit;
+            updateModeHighlight();
+        }
+
+        function toggleLockWallpaper() {
+            prefs.wpFreq = (prefs.wpFreq === 'locked') ? '15min' : 'locked';
+            document.getElementById('wp-frequency').value = prefs.wpFreq;
+            localStorage.setItem('myPrefs', JSON.stringify(prefs));
+            updateLockButtonUI();
+            showToast(prefs.wpFreq === 'locked' ? 'Wallpaper locked' : 'Wallpaper rotation resumed');
+        }
+
+        function toggleZenMode() {
+            document.body.classList.toggle('zen-mode');
+            const isZen = document.body.classList.contains('zen-mode');
+            const btn = document.getElementById('zen-mode-btn');
+            btn.style.borderColor = isZen ? 'var(--accent-purple)' : 'var(--glass-border)';
+            btn.innerText = isZen ? '👁️ Exit Zen' : '👁️ Zen';
+        }
+
+        function updateLockButtonUI() {
+            const btn = document.getElementById('lock-wp-btn');
+            if (prefs.wpFreq === 'locked') {
+                btn.innerText = '🔒 Locked';
+                btn.style.borderColor = 'var(--accent-purple)';
+            } else {
+                btn.innerText = '🔓 Rotate';
+                btn.style.borderColor = 'var(--glass-border)';
+            }
+        }
+
+        function selectWallpaperMode(mode) {
+            prefs.wpMode = mode;
+            localStorage.setItem('myPrefs', JSON.stringify(prefs));
+            updateUI();
+        }
+
+        function updateModeHighlight() {
+            ['tabliss', 'custom', 'mesh'].forEach(m => {
+                const el = document.getElementById('mode-' + m);
+                if (el) el.classList.toggle('active-mode', prefs.wpMode === m);
+            });
+            const isTabliss = prefs.wpMode === 'tabliss';
+            document.getElementById('tabliss-settings-group').style.display = isTabliss ? 'block' : 'none';
+            document.getElementById('next-wp-btn').style.display = isTabliss ? 'flex' : 'none';
+            document.getElementById('lock-wp-btn').style.display = isTabliss ? 'flex' : 'none';
+            document.getElementById('tabliss-credit').style.display = isTabliss ? 'inline' : 'none';
+        }
+
+        function applyVisualFilters() {
+            prefs.wpBlur = parseInt(document.getElementById('wp-blur').value, 10) || 0;
+            prefs.wpDim = parseInt(document.getElementById('wp-dim').value, 10) || 0;
+            document.getElementById('blur-val').innerText = `${prefs.wpBlur}px`;
+            document.getElementById('dim-val').innerText = `${prefs.wpDim}%`;
+
+            const bgLayer = document.getElementById('bg-layer');
+            const bgOverlay = document.getElementById('bg-overlay');
+
+            bgLayer.style.filter = prefs.wpBlur > 0 ? `blur(${prefs.wpBlur}px)` : 'none';
+            bgLayer.style.transform = prefs.wpBlur > 0 ? 'scale(1.06)' : 'scale(1)';
+            bgOverlay.style.background = `rgba(0, 0, 0, ${prefs.wpDim / 100})`;
+
+            localStorage.setItem('myPrefs', JSON.stringify(prefs));
+        }
+
+        setInterval(async () => {
+            if (prefs.wpOn && prefs.wpMode === 'tabliss' && prefs.wpFreq !== 'locked' && prefs.wpFreq !== 'newtab') {
+                const item = await resolveTablissWallpaper(false);
+                document.getElementById('bg-layer').style.backgroundImage = `url('${item.url}')`;
+                document.getElementById('tabliss-credit').innerText = item.credit;
+            }
+        }, 60000);
+
+        // --- 3. SMART GITHUB `data.json` AUTO-SYNC & STORAGE INIT ---
+        function simpleHash(str) {
+            let h = 0;
+            for (let i = 0; i < str.length; i++) {
+                h = ((h << 5) - h) + str.charCodeAt(i);
+                h |= 0;
+            }
+            return String(h);
+        }
+
+        async function loadFromGitHubJSON(forceReload = false) {
+            try {
+                const res = await fetch('./data.json?t=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) throw new Error('Could not fetch data.json');
+                const rawText = await res.text();
+                const currentHash = simpleHash(rawText);
+                const lastHash = localStorage.getItem('lastGitHubJsonHash');
+
+                // Only overwrite if forced, first load, or if `data.json` on GitHub actually changed!
+                if (!forceReload && lastHash && lastHash === currentHash) {
+                    return false;
+                }
+
+                const data = JSON.parse(rawText);
+                localStorage.setItem('lastGitHubJsonHash', currentHash);
+
+                if (data.prefs) { prefs = { ...prefs, ...data.prefs }; localStorage.setItem('myPrefs', JSON.stringify(prefs)); }
+                if (data.weatherPrefs) { weatherPrefs = data.weatherPrefs; localStorage.setItem('myWeatherPrefs', JSON.stringify(weatherPrefs)); }
+                if (data.mainShortcuts) mainShortcuts = data.mainShortcuts;
+                if (data.sbShortcuts) sbShortcuts = data.sbShortcuts;
+                if (data.wallpaper && data.wallpaper !== 'none') await dbSet('myWallpaper', data.wallpaper);
+
+                if (!prefs.manualSort) sortShortcutsAlphabetically();
+                await persistShortcuts();
+                syncToggles();
+                fetchWeather();
+                await updateUI();
+                renderGrids();
+                if (forceReload || lastHash) showToast("Synced latest changes from GitHub data.json");
+                return true;
+            } catch (err) {
+                console.warn("GitHub JSON check skipped or failed:", err);
+                return false;
+            }
+        }
+
+        function syncToggles() {
+            document.getElementById('toggle-wp').checked = prefs.wpOn;
+            document.getElementById('toggle-weather').checked = prefs.weatherOn;
+            document.getElementById('toggle-shortcuts').checked = prefs.shortcutsOn;
+            document.getElementById('toggle-sidebar').checked = prefs.sbOn;
+            document.getElementById('toggle-sidebar-auto').checked = prefs.sbAuto;
+            document.getElementById('toggle-svg-icons').checked = !!prefs.svgIcons;
+            document.getElementById('toggle-24h').checked = !!prefs.use24h;
+            document.getElementById('wp-frequency').value = prefs.wpFreq || '15min';
+            document.getElementById('wp-blur').value = prefs.wpBlur || 0;
+            document.getElementById('wp-dim').value = (prefs.wpDim !== undefined) ? prefs.wpDim : 25;
+            document.getElementById('unsplash-key').value = prefs.unsplashKey || '';
+            const eng = SEARCH_ENGINES[prefs.searchEngine] || SEARCH_ENGINES.google;
+            document.getElementById('engine-label').innerText = eng.label;
+            updateLockButtonUI();
+        }
+
+        async function initStorage() {
+            const localPrefs = localStorage.getItem('myPrefs');
+            const savedMain = await dbGet('myShortcuts');
+
+            if (!localPrefs && (!savedMain || !Array.isArray(savedMain))) {
+                await loadFromGitHubJSON(true);
+                updateClock();
+                return;
+            }
+
+            if (localPrefs) prefs = { ...prefs, ...JSON.parse(localPrefs) };
+            const localWeather = localStorage.getItem('myWeatherPrefs');
+            if (localWeather) weatherPrefs = JSON.parse(localWeather);
+
+            if (savedMain && Array.isArray(savedMain)) mainShortcuts = savedMain;
+            const savedSb = await dbGet('mySbShortcuts');
+            if (savedSb && Array.isArray(savedSb)) sbShortcuts = savedSb;
+
+            syncToggles();
+            if (!prefs.manualSort) { sortShortcutsAlphabetically(); await persistShortcuts(); }
+            updateClock();
+            fetchWeather();
+            await updateUI();
+            renderGrids();
+
+            // Check in background if user committed a newer `data.json` to GitHub
+            loadFromGitHubJSON(false);
+        }
+
+        function toggleMenu(event) { 
+            if(event) event.stopPropagation();
+            document.getElementById('side-panel').classList.toggle('open'); 
+        }
+
+        function applySettings() {
+            prefs.wpOn = document.getElementById('toggle-wp').checked;
+            prefs.weatherOn = document.getElementById('toggle-weather').checked;
+            prefs.shortcutsOn = document.getElementById('toggle-shortcuts').checked;
+            prefs.sbOn = document.getElementById('toggle-sidebar').checked;
+            prefs.sbAuto = document.getElementById('toggle-sidebar-auto').checked;
+            prefs.svgIcons = document.getElementById('toggle-svg-icons').checked;
+            prefs.use24h = document.getElementById('toggle-24h').checked;
+            prefs.wpFreq = document.getElementById('wp-frequency').value;
+            prefs.unsplashKey = document.getElementById('unsplash-key').value.trim();
+            localStorage.setItem('myPrefs', JSON.stringify(prefs));
+            updateClock();
+            updateLockButtonUI();
+            updateUI();
+            renderGrids();
+        }
+
+        async function updateUI() {
+            document.getElementById('weather-widget').style.display = prefs.weatherOn ? 'block' : 'none';
+            document.getElementById('shortcut-grid').style.display = prefs.shortcutsOn ? 'flex' : 'none';
+            document.getElementById('wp-controls-box').style.display = prefs.wpOn ? 'block' : 'none';
+
+            applyVisualFilters();
+            updateModeHighlight();
+
+            const bgLayer = document.getElementById('bg-layer');
+            if (!prefs.wpOn || prefs.wpMode === 'mesh') {
+                bgLayer.style.backgroundImage = MESH_GRADIENT;
+            } else if (prefs.wpMode === 'custom') {
+                let savedBg = await dbGet('myWallpaper') || localStorage.getItem('myWallpaper') || 'none';
+                if (savedBg && savedBg !== 'none') {
+                    bgLayer.style.backgroundImage = `url('${savedBg}')`;
+                } else {
+                    bgLayer.style.backgroundImage = MESH_GRADIENT;
+                }
+            } else {
+                const item = await resolveTablissWallpaper(false);
+                bgLayer.style.backgroundImage = `url('${item.url}')`;
+                document.getElementById('tabliss-credit').innerText = item.credit;
+            }
+
+            const sb = document.getElementById('left-sidebar');
+            const hitbox = document.getElementById('sb-hitbox');
+            const main = document.getElementById('main-content');
+            const clock = document.getElementById('time-widget');
+            const tablissCtrl = document.getElementById('tabliss-controls');
+
+            if (!prefs.sbOn) {
+                sb.style.display = 'none'; hitbox.style.display = 'none';
+                main.classList.remove('shifted'); clock.style.left = '55px'; tablissCtrl.style.left = '35px';
+            } else {
+                sb.style.display = 'flex';
+                if (prefs.sbAuto) {
+                    sb.classList.add('auto-hide'); hitbox.style.display = 'block';
+                    main.classList.remove('shifted'); clock.style.left = '55px'; tablissCtrl.style.left = '35px';
+                } else {
+                    sb.classList.remove('auto-hide'); hitbox.style.display = 'none';
+                    main.classList.add('shifted'); clock.style.left = '95px'; tablissCtrl.style.left = '85px';
+                }
+            }
+        }
+
+        function setCustomWallpaper(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const imgData = e.target.result;
+                    await dbSet('myWallpaper', imgData);
+                    prefs.wpMode = 'custom';
+                    localStorage.setItem('myPrefs', JSON.stringify(prefs));
+                    updateUI();
+                    showToast("Custom wallpaper applied");
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // --- 4. CLOCK, DATE & DYNAMIC WMO WEATHER ---
+        function updateClock() {
+            const now = new Date();
+            let rawHours = now.getHours();
+            let minutes = now.getMinutes();
+            let ampm = rawHours >= 12 ? 'PM' : 'AM';
+            let displayHours = rawHours;
+
+            if (!prefs.use24h) {
+                displayHours = rawHours % 12;
+                displayHours = displayHours ? displayHours : 12;
+                document.getElementById('time-ampm').style.display = 'inline';
+                document.getElementById('time-ampm').innerText = ampm;
+            } else {
+                displayHours = rawHours < 10 ? '0' + rawHours : rawHours;
+                document.getElementById('time-ampm').style.display = 'none';
+            }
+
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('time-h').innerText = `${displayHours}:${minutes}`;
+
+            let greeting = 'Good evening';
+            if (rawHours < 12) greeting = 'Good morning';
+            else if (rawHours < 18) greeting = 'Good afternoon';
+
+            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            document.getElementById('date-sub').innerText = `${greeting} • ${dateStr}`;
+        }
+        setInterval(updateClock, 1000);
+
+        function mapWmoWeather(code, isDay) {
+            if (code === 0) return { icon: isDay ? '☀️' : '🌙', label: 'Clear Sky' };
+            if (code === 1 || code === 2) return { icon: isDay ? '⛅' : '☁️', label: 'Partly Cloudy' };
+            if (code === 3) return { icon: '☁️', label: 'Overcast' };
+            if (code === 45 || code === 48) return { icon: '🌫️', label: 'Foggy' };
+            if (code >= 51 && code <= 67) return { icon: '🌧️', label: 'Rain' };
+            if (code >= 71 && code <= 77) return { icon: '❄️', label: 'Snow' };
+            if (code >= 80 && code <= 82) return { icon: '🌦️', label: 'Rain Showers' };
+            if (code >= 95) return { icon: '⛈️', label: 'Thunderstorm' };
+            return { icon: '⛅', label: 'Fair' };
+        }
+
+        function fetchWeather() {
+            document.getElementById('weather-loc-name').innerText = weatherPrefs.name;
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${weatherPrefs.lat}&longitude=${weatherPrefs.lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=${weatherPrefs.unit}&timezone=auto`)
+            .then(res => res.json())
+            .then(data => {
+                const cw = data.current_weather;
+                const temp = Math.round(cw.temperature);
+                const high = Math.round(data.daily.temperature_2m_max[0]);
+                const low = Math.round(data.daily.temperature_2m_min[0]);
+                const unitSymbol = weatherPrefs.unit === 'fahrenheit' ? '°F' : '°C';
+                const wmo = mapWmoWeather(cw.weathercode, cw.is_day !== 0);
+
+                document.getElementById('w-icon').innerText = wmo.icon;
+                document.getElementById('w-temp').innerText = `${temp}${unitSymbol}`;
+                document.getElementById('w-cond').innerText = wmo.label;
+                document.getElementById('w-highlow').innerText = `↑${high}° ↓${low}°`;
+                document.querySelector('#weather-dropdown div:nth-child(1)').innerText = weatherPrefs.unit === 'fahrenheit' ? 'Switch to Celsius' : 'Switch to Fahrenheit';
+            });
+        }
+
+        function toggleWeatherMenu(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('weather-dropdown');
+            const btn = document.getElementById('weather-menu-btn');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none'; btn.classList.remove('active');
+            } else {
+                dropdown.style.display = 'block'; btn.classList.add('active');
+            }
+        }
+
+        function toggleWeatherUnit(e) {
+            if(e) e.stopPropagation();
+            weatherPrefs.unit = weatherPrefs.unit === 'fahrenheit' ? 'celsius' : 'fahrenheit';
+            localStorage.setItem('myWeatherPrefs', JSON.stringify(weatherPrefs));
+            fetchWeather();
+            document.getElementById('weather-dropdown').style.display = 'none';
+            document.getElementById('weather-menu-btn').classList.remove('active');
+        }
+
+        function openWeatherLocModal(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('weather-dropdown').style.display = 'none';
+            document.getElementById('weather-menu-btn').classList.remove('active');
+            document.getElementById('new-weather-loc').value = '';
+            document.getElementById('weather-loc-overlay').style.display = 'flex';
+            document.getElementById('new-weather-loc').focus();
+        }
+
+        function closeWeatherLocModal() { document.getElementById('weather-loc-overlay').style.display = 'none'; }
+
+        async function saveWeatherLocation() {
+            let loc = document.getElementById('new-weather-loc').value.trim();
+            if (loc) {
+                try {
+                    let res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(loc)}&count=1`);
+                    let data = await res.json();
+                    if (data.results && data.results.length > 0) {
+                        weatherPrefs.lat = data.results[0].latitude;
+                        weatherPrefs.lon = data.results[0].longitude;
+                        weatherPrefs.name = data.results[0].name;
+                        localStorage.setItem('myWeatherPrefs', JSON.stringify(weatherPrefs));
+                        fetchWeather();
+                        closeWeatherLocModal();
+                        showToast(`Weather location set to ${weatherPrefs.name}`);
+                    } else { showToast("Location not found"); }
+                } catch (e) { showToast("Error connecting to weather service"); }
+            }
+        }
+
+        // --- 5. MULTI-ENGINE SEARCH & LIVE SHORTCUT FILTERING ---
+        function toggleEngineMenu(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('engine-dropdown');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function setSearchEngine(key) {
+            prefs.searchEngine = key;
+            localStorage.setItem('myPrefs', JSON.stringify(prefs));
+            document.getElementById('engine-label').innerText = SEARCH_ENGINES[key].label;
+            document.getElementById('engine-dropdown').style.display = 'none';
+            document.getElementById('search-input').focus();
+        }
+
+        function filterShortcutsLive(query) {
+            const q = query.trim().toLowerCase();
+            const cards = document.querySelectorAll('#shortcut-grid .shortcut-wrapper[data-name]');
+            cards.forEach(card => {
+                if (!q || q.startsWith('!')) {
+                    card.classList.remove('dimmed', 'search-match');
+                } else if (card.dataset.name.includes(q)) {
+                    card.classList.add('search-match');
+                    card.classList.remove('dimmed');
+                } else {
+                    card.classList.add('dimmed');
+                    card.classList.remove('search-match');
+                }
+            });
+        }
+
+        function handleSearchKeydown(e) {
+            if (e.altKey && e.key === 'Enter') {
+                const match = document.querySelector('#shortcut-grid .shortcut-wrapper.search-match a');
+                if (match) {
+                    e.preventDefault();
+                    window.location.href = match.href;
+                }
+            }
+        }
+
+        function handleSearchSubmit(e) {
+            e.preventDefault();
+            let raw = document.getElementById('search-input').value.trim();
+            if (!raw) return;
+
+            let engineUrl = (SEARCH_ENGINES[prefs.searchEngine] || SEARCH_ENGINES.google).url;
+            const bangs = {
+                '!g ': SEARCH_ENGINES.google.url,
+                '!ddg ': SEARCH_ENGINES.ddg.url,
+                '!yt ': SEARCH_ENGINES.youtube.url,
+                '!gh ': SEARCH_ENGINES.github.url,
+                '!ai ': SEARCH_ENGINES.perplexity.url
+            };
+
+            for (const [prefix, url] of Object.entries(bangs)) {
+                if (raw.toLowerCase().startsWith(prefix)) {
+                    engineUrl = url;
+                    raw = raw.slice(prefix.length).trim();
+                    break;
+                }
+            }
+
+            window.location.href = engineUrl + encodeURIComponent(raw);
+        }
+
+        // --- 6. SHORTCUTS, SVG 3-DOT MENU & DRAG-AND-DROP ---
+        const DOTS_SVG = `<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>`;
+        const CLOSE_SVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>`;
+
+        function getCleanDomain(url) {
+            return url.replace(/^https?:\/\//, '').replace(/^www\./, '').split(/[/?#]/)[0];
+        }
+
+        function resolveIconUrl(sc) {
+            if (sc.customImg) return sc.customImg;
+            const cleanDomain = getCleanDomain(sc.url);
+            if (prefs.svgIcons) {
+                const slug = SIMPLE_ICON_SLUGS[cleanDomain] || cleanDomain.split('.')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+                return `https://cdn.simpleicons.org/${slug}/f8fafc`;
+            }
+            return `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
+        }
+
+        function handleIconError(imgEl, fallbackUrl, labelText) {
+            if (!imgEl.dataset.triedFallback && fallbackUrl) {
+                imgEl.dataset.triedFallback = 'true';
+                imgEl.src = fallbackUrl;
+            } else {
+                const initials = (labelText || '?').trim().slice(0, 2);
+                const span = document.createElement('span');
+                span.className = 'icon-fallback';
+                span.innerText = initials;
+                imgEl.replaceWith(span);
+            }
+        }
+
+        function sortShortcutsAlphabetically() {
+            if (!prefs.manualSort) {
+                mainShortcuts.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+            }
+        }
+
+        async function resetSort() {
+            prefs.manualSort = false;
+            localStorage.setItem('myPrefs', JSON.stringify(prefs));
+            sortShortcutsAlphabetically();
+            await persistShortcuts();
+            renderGrids();
+            showToast("Shortcuts sorted alphabetically");
+        }
+
+        async function persistShortcuts() {
+            await dbSet('myShortcuts', mainShortcuts);
+            await dbSet('mySbShortcuts', sbShortcuts);
+            try { localStorage.setItem('myShortcuts', JSON.stringify(mainShortcuts)); } catch(e){}
+            try { localStorage.setItem('mySbShortcuts', JSON.stringify(sbShortcuts)); } catch(e){}
+        }
+
+        let activeShortcutIndex = null;
+        let isEditing = false;
+        let targetList = 'main'; 
+        const contextMenu = document.getElementById('context-menu');
+        let draggedIndex = null;
+        let draggedType = null;
+
+        function renderGrids() {
+            const mGrid = document.getElementById('shortcut-grid');
+            mGrid.innerHTML = '';
+            mainShortcuts.forEach((sc, index) => {
+                const cleanDomain = getCleanDomain(sc.url);
+                const primarySrc = resolveIconUrl(sc);
+                const fallbackFavicon = `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
+                const safeName = (sc.name || cleanDomain).replace(/'/g, "\\'");
+                const searchKey = (sc.name || '').toLowerCase().replace(/"/g, '');
+
+                mGrid.innerHTML += `
+                    <div class="shortcut-wrapper" style="--i: ${index}" draggable="true" data-name="${searchKey}"
+                         oncontextmenu="openContextMenu(event, ${index})"
+                         ondragstart="handleDragStart(event, ${index}, 'main')"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)"
+                         ondrop="handleDrop(event, ${index}, 'main')"
+                         ondragend="handleDragEnd(event)">
+                        <a href="${sc.url}" class="icon-box" draggable="false">
+                            <img src="${primarySrc}" draggable="false" onerror="handleIconError(this, '${fallbackFavicon}', '${safeName}')">
+                        </a>
+                        <div class="shortcut-label">${sc.name}</div>
+                        <button type="button" class="menu-trigger" onclick="openContextMenu(event, ${index})" aria-label="Shortcut options">${DOTS_SVG}</button>
+                    </div>`;
+            });
+            mGrid.innerHTML += `
+                <div class="shortcut-wrapper" style="--i: ${mainShortcuts.length}" onclick="openAddModal('main')" style="cursor:pointer;">
+                    <div class="icon-box" style="border: 1.5px dashed rgba(255,255,255,0.22); background: rgba(255,255,255,0.03); font-size: 24px; color: #94a3b8; box-shadow: none;">+</div>
+                    <div class="shortcut-label">Add</div>
+                </div>`;
+
+            const sGrid = document.getElementById('left-sidebar');
+            sGrid.innerHTML = '';
+            sbShortcuts.forEach((sc, index) => {
+                const cleanDomain = getCleanDomain(sc.url);
+                const primarySrc = resolveIconUrl(sc);
+                const fallbackFavicon = `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
+                sGrid.innerHTML += `
+                    <div class="sb-item-wrapper" draggable="true"
+                         ondragstart="handleDragStart(event, ${index}, 'sidebar')"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)"
+                         ondrop="handleDrop(event, ${index}, 'sidebar')"
+                         ondragend="handleDragEnd(event)">
+                        <a href="${sc.url}" class="sb-icon" draggable="false">
+                            <img src="${primarySrc}" draggable="false" onerror="handleIconError(this, '${fallbackFavicon}', '${cleanDomain}')">
+                        </a>
+                        <div class="sb-delete" onclick="deleteSidebarShortcut(${index})" title="Remove">${CLOSE_SVG}</div>
+                    </div>`;
+            });
+            sGrid.innerHTML += `<div class="sb-icon sb-add" onclick="openAddModal('sidebar')">+</div>`;
+        }
+
+        function handleDragStart(e, index, type) {
+            draggedIndex = index; draggedType = type;
+            e.dataTransfer.effectAllowed = "move";
+            let el = e.target.closest('.shortcut-wrapper, .sb-item-wrapper');
+            if(el) setTimeout(() => el.classList.add('dragging'), 0);
+        }
+        function handleDragOver(e) {
+            e.preventDefault(); e.dataTransfer.dropEffect = "move";
+            let el = e.target.closest('.shortcut-wrapper, .sb-item-wrapper');
+            if (el && !el.classList.contains('dragging')) el.classList.add('drag-over');
+        }
+        function handleDragLeave(e) {
+            let el = e.target.closest('.shortcut-wrapper, .sb-item-wrapper');
+            if (el) el.classList.remove('drag-over');
+        }
+        async function handleDrop(e, targetIndex, type) {
+            e.preventDefault();
+            let el = e.target.closest('.shortcut-wrapper, .sb-item-wrapper');
+            if (el) el.classList.remove('drag-over');
+
+            if (draggedType === type && draggedIndex !== null && draggedIndex !== targetIndex) {
+                if (type === 'main') {
+                    prefs.manualSort = true;
+                    localStorage.setItem('myPrefs', JSON.stringify(prefs));
+                }
+                let list = (type === 'main') ? mainShortcuts : sbShortcuts;
+                let draggedItem = list.splice(draggedIndex, 1)[0];
+                list.splice(targetIndex, 0, draggedItem);
+                await persistShortcuts();
+                renderGrids();
+            }
+            draggedIndex = null; draggedType = null;
+        }
+        function handleDragEnd(e) {
+            let el = e.target.closest('.shortcut-wrapper, .sb-item-wrapper');
+            if(el) el.classList.remove('dragging');
+            draggedIndex = null; draggedType = null;
+        }
+
+        async function deleteSidebarShortcut(index) {
+            const removed = sbShortcuts.splice(index, 1)[0];
+            await persistShortcuts();
+            renderGrids();
+            showToast("Sidebar shortcut removed", async () => {
+                sbShortcuts.splice(index, 0, removed);
+                await persistShortcuts();
+                renderGrids();
+            });
+        }
+
+        function openContextMenu(event, index) {
+            event.preventDefault(); event.stopPropagation();
+            document.querySelectorAll('.menu-trigger.active').forEach(b => b.classList.remove('active'));
+            const triggerBtn = event.currentTarget.classList && event.currentTarget.classList.contains('menu-trigger') ? event.currentTarget : null;
+            if (triggerBtn) triggerBtn.classList.add('active');
+
+            activeShortcutIndex = index;
+            contextMenu.style.display = 'block';
+            const menuWidth = 235;
+            const leftPos = (event.pageX + menuWidth + 20 > window.innerWidth) ? (event.pageX - menuWidth) : (event.pageX + 8);
+            contextMenu.style.left = leftPos + 'px';
+            contextMenu.style.top = (event.pageY + 8) + 'px';
+        }
+
+        async function executeMenuAction(action) {
+            if (activeShortcutIndex === null) return;
+            const idx = activeShortcutIndex;
+            let sc = mainShortcuts[idx];
+            contextMenu.style.display = 'none';
+            document.querySelectorAll('.menu-trigger.active').forEach(b => b.classList.remove('active'));
+
+            if (action === 'new-tab') { window.open(sc.url, '_blank'); }
+            else if (action === 'new-window') { window.open(sc.url, '_blank', 'height=800,width=1200'); }
+            else if (action === 'private') { showToast("Use browser right-click > Open in New Private Window"); }
+            else if (action === 'edit') { 
+                isEditing = true; targetList = 'main';
+                document.getElementById('modal-title').innerText = "Edit site";
+                document.getElementById('new-site-name').value = sc.name;
+                document.getElementById('new-site-url').value = sc.url;
+                document.getElementById('add-site-overlay').style.display = 'flex';
+                document.getElementById('new-site-name').focus();
+            }
+            else if (action === 'image') { document.getElementById('shortcut-image-input').click(); }
+            else if (action === 'delete') {
+                const removed = mainShortcuts.splice(idx, 1)[0];
+                await persistShortcuts();
+                renderGrids();
+                showToast(`Moved "${removed.name}" to Trash`, async () => {
+                    mainShortcuts.splice(idx, 0, removed);
+                    sortShortcutsAlphabetically();
+                    await persistShortcuts();
+                    renderGrids();
+                });
+            }
+        }
+
+        function applyCustomImage(event) {
+            const file = event.target.files[0];
+            if (file && activeShortcutIndex !== null) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = async function() {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 128; canvas.height = 128;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, 128, 128
