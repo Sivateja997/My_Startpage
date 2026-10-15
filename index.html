@@ -5,18 +5,647 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Startpage</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --bg-base: #0B0F19;
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-bg-hover: rgba(255, 255, 255, 0.13);
+            --glass-panel: rgba(15, 21, 35, 0.86);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-border-hover: rgba(255, 255, 255, 0.28);
+            --glass-specular: inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-purple: #b89bf8;
+            --toggle-purple: #9059ff;
+            --spring-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --smooth-ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeUpIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes menuPop {
+            from { opacity: 0; transform: scale(0.92) translateY(-6px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 165px;
+            min-height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .bg-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 15% 15%, rgba(92, 85, 233, 0.22) 0px, transparent 50%),
+                radial-gradient(at 85% 18%, rgba(144, 89, 255, 0.18) 0px, transparent 50%),
+                radial-gradient(at 50% 85%, rgba(56, 189, 248, 0.12) 0px, transparent 55%);
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease, filter 0.25s ease, transform 0.25s ease;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+            background: rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+            transition: background 0.25s ease;
+        }
+
+        /* --- TABLISS BOTTOM-LEFT CONTROLS --- */
+        .tabliss-controls {
+            position: fixed;
+            bottom: 28px;
+            left: 45px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 90;
+            opacity: 0.55;
+            transition: opacity 0.25s ease, left 0.3s ease;
+        }
+        .tabliss-controls:hover { opacity: 1; }
+        .tabliss-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3), var(--glass-specular);
+            color: var(--text-color);
+            height: 36px;
+            padding: 0 13px;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 12.5px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: transform 0.2s var(--spring-ease), background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .tabliss-btn:hover {
+            background: var(--glass-bg-hover);
+            border-color: var(--glass-border-hover);
+            transform: translateY(-2px);
+        }
+        .tabliss-credit {
+            font-size: 11.5px;
+            color: rgba(248, 250, 252, 0.8);
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+            margin-left: 4px;
+            user-select: none;
+        }
+
+        /* --- CLOCK & DATE WIDGET --- */
+        .time-widget {
+            position: fixed;
+            top: 32px;
+            left: 50px;
+            color: var(--text-color);
+            text-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            z-index: 20;
+            transition: left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+        .time-row { display: flex; align-items: baseline; letter-spacing: -1.5px; }
+        .time-main { font-size: 56px; font-weight: 700; line-height: 1; }
+        .time-ampm {
+            font-size: 18px;
+            font-weight: 300;
+            color: rgba(248, 250, 252, 0.8);
+            margin-left: 8px;
+            letter-spacing: 1px;
+        }
+        .date-sub {
+            margin-top: 6px;
+            font-size: 13.5px;
+            font-weight: 400;
+            color: rgba(248, 250, 252, 0.75);
+        }
+
+        /* --- WEATHER WIDGET --- */
+        .weather-widget {
+            position: fixed;
+            top: 28px;
+            right: 40px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            padding: 15px 20px;
+            border-radius: 18px;
+            width: 190px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), var(--glass-specular);
+            z-index: 20;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .weather-widget:hover { border-color: var(--glass-border-hover); transform: translateY(-2px); }
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .weather-menu-trigger {
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 50%;
+            width: 26px; height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s ease;
+            margin-right: -5px;
+        }
+        .weather-menu-trigger svg { width: 15px; height: 15px; fill: currentColor; }
+        .weather-menu-trigger:hover, .weather-menu-trigger.active {
+            background-color: rgba(255, 255, 255, 0.14);
+            color: var(--text-color);
+        }
+        .weather-dropdown {
+            position: absolute;
+            top: 32px; right: 0;
+            background: var(--glass-panel);
+            backdrop-filter: blur(18px);
+            border-radius: 12px;
+            width: 165px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), var(--glass-specular);
+            padding: 6px 0;
+            z-index: 30;
+            display: none;
+            border: 1px solid var(--glass-border);
+            overflow: hidden;
+            animation: menuPop 0.2s var(--smooth-ease) both;
+        }
+        .weather-dropdown div {
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: 0.15s ease;
+        }
+        .weather-dropdown div:hover { background-color: rgba(255, 255, 255, 0.1); padding-left: 19px; }
+
+        .weather-body { display: flex; align-items: center; gap: 14px; }
+        .weather-icon-box {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 46px; height: 46px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .weather-details { display: flex; flex-direction: column; }
+        .weather-temp { font-size: 24px; font-weight: 700; line-height: 1.1; }
+        .weather-cond { font-size: 11.5px; font-weight: 500; color: var(--accent-purple); margin-top: 2px; }
+        .weather-highlow { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+
+        /* --- LEFT SIDEBAR (AUTO-HIDDEN BY DEFAULT SO IT NEVER CLIPS CLOCK) --- */
+        .sidebar-hitbox { position: fixed; top: 0; left: 0; width: 16px; height: 100vh; z-index: 350; display: block; }
+        .left-sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: 68px; height: 100vh;
+            background: rgba(15, 20, 32, 0.72);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+            box-sizing: border-box;
+            box-shadow: 8px 0 30px rgba(0, 0, 0, 0.4);
+            z-index: 400;
+            transition: transform 0.3s var(--smooth-ease);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .left-sidebar::-webkit-scrollbar { display: none; }
+        .left-sidebar.auto-hide { transform: translateX(-100%); }
+        .left-sidebar.auto-hide:hover,
+        .sidebar-hitbox:hover + .left-sidebar { transform: translateX(0); }
+
+        .sb-item-wrapper { position: relative; width: 100%; display: flex; justify-content: center; cursor: grab; margin-bottom: 14px; }
+        .sb-icon {
+            width: 44px; height: 44px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-specular);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: transform 0.2s var(--spring-ease), background-color 0.2s ease, border-color 0.2s ease;
+            text-decoration: none;
+            overflow: hidden;
+        }
+        .sb-icon img { width: 24px; height: 24px; object-fit: contain; border-radius: 4px; }
+        .sb-icon:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); transform: translateY(-2px) scale(1.06); }
+        .sb-add { background: transparent; border: 1.5px dashed rgba(255, 255, 255, 0.25); color: var(--text-muted); font-size: 20px; margin-top: 4px; cursor: pointer; }
+        .sb-add:hover { border-color: var(--accent-purple); color: var(--text-color); background: rgba(184, 155, 248, 0.1); }
+
+        .sb-delete {
+            position: absolute; top: -5px; right: 7px;
+            background: rgba(20, 24, 36, 0.9);
+            color: #fca5a5;
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            border-radius: 50%;
+            width: 18px; height: 18px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.7);
+            pointer-events: none;
+            z-index: 10;
+            transition: 0.2s var(--spring-ease);
+        }
+        .sb-delete svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 2.5; }
+        .sb-item-wrapper:hover .sb-delete { opacity: 1; transform: scale(1); pointer-events: auto; }
+        .sb-delete:hover { background: #ef4444; color: white; transform: scale(1.12); }
+
+        /* --- MAIN SHORTCUTS --- */
+        .content-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            z-index: 1;
+            box-sizing: border-box;
+            transition: padding-left 0.3s ease, opacity 0.35s ease, transform 0.35s ease;
+            padding-bottom: 80px;
+        }
+        .content-container.shifted { padding-left: 68px; }
+        body.zen-mode .content-container { opacity: 0; pointer-events: none; transform: translateY(15px); }
+
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 26px 30px;
+            max-width: 1180px;
+            width: 92%;
+            margin-bottom: 44px;
+        }
+        .shortcut-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80px;
+            cursor: grab;
+            animation: fadeUpIn 0.4s var(--smooth-ease) both;
+            animation-delay: calc(var(--i, 0) * 18ms);
+            transition: transform 0.25s var(--spring-ease), opacity 0.2s ease;
+        }
+        .shortcut-wrapper:hover { transform: translateY(-5px); }
+        .shortcut-wrapper:active { transform: translateY(-1px) scale(0.96); }
+        .shortcut-wrapper.dimmed { opacity: 0.22; transform: scale(0.94); }
+        .shortcut-wrapper.search-match .icon-box {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 22px rgba(184, 155, 248, 0.48), var(--glass-specular);
+            transform: scale(1.06);
+        }
+
+        .icon-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            width: 64px; height: 64px;
+            border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.25s var(--spring-ease), box-shadow 0.25s ease, background-color 0.2s ease, border-color 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            overflow: hidden;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22), var(--glass-specular);
+        }
+        .shortcut-wrapper:hover .icon-box {
+            background: var(--glass-bg-hover);
+            border-color: var(--glass-border-hover);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.42), var(--glass-specular);
+        }
+        .icon-box img { width: 34px; height: 34px; object-fit: contain; border-radius: 7px; transition: transform 0.25s var(--spring-ease); }
+        .shortcut-wrapper:hover .icon-box img { transform: scale(1.08); }
+        .icon-fallback { font-size: 20px; font-weight: 700; color: var(--text-color); text-transform: uppercase; user-select: none; }
+        .shortcut-label {
+            margin-top: 10px;
+            font-size: 12.5px;
+            font-weight: 500;
+            color: rgba(248, 250, 252, 0.9);
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        /* --- PERFECTLY CENTERED SVG 3-DOT MENU BUTTON --- */
+        .menu-trigger {
+            position: absolute;
+            top: -6px;
+            right: 2px;
+            background: rgba(18, 22, 34, 0.86);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: rgba(248, 250, 252, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+            opacity: 0;
+            transform: scale(0.7) translateY(4px);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.22s var(--spring-ease), background-color 0.15s ease, border-color 0.15s ease;
+        }
+        .menu-trigger svg { width: 13px; height: 13px; fill: currentColor; display: block; }
+        .shortcut-wrapper:hover .menu-trigger,
+        .menu-trigger.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+        .menu-trigger:hover {
+            background: rgba(38, 45, 66, 0.96);
+            border-color: rgba(255, 255, 255, 0.45);
+            color: #ffffff;
+            transform: scale(1.12);
+        }
+
+        /* --- CONTEXT MENU --- */
+        .custom-context-menu {
+            position: absolute;
+            display: none;
+            background: rgba(24, 29, 44, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 14px;
+            width: 235px;
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.68), var(--glass-specular);
+            padding: 6px 0;
+            z-index: 1000;
+            border: 1px solid var(--glass-border-hover);
+            overflow: hidden;
+            animation: menuPop 0.2s var(--smooth-ease) both;
+        }
+        .custom-context-menu div.menu-item {
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: background-color 0.15s ease, padding-left 0.15s ease;
+        }
+        .custom-context-menu div.menu-item:hover { background-color: rgba(255, 255, 255, 0.1); padding-left: 22px; }
+        .context-divider { height: 6px; background-color: rgba(255, 255, 255, 0.05); margin: 4px 0; width: 100%; }
+
+        /* --- SEARCH BAR --- */
+        .search-container { width: 90%; max-width: 580px; position: relative; }
+        .search-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
+        .engine-btn {
+            position: absolute; left: 10px;
+            height: 36px; padding: 0 12px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-color);
+            font-family: inherit; font-size: 12px; font-weight: 600;
+            display: flex; align-items: center; gap: 5px;
+            cursor: pointer; z-index: 3; transition: 0.2s ease;
+        }
+        .engine-btn:hover { background: rgba(255, 255, 255, 0.16); border-color: var(--glass-border-hover); }
+        .engine-dropdown {
+            position: absolute; top: 62px; left: 0;
+            background: var(--glass-panel);
+            backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            width: 195px;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), var(--glass-specular);
+            padding: 6px 0; z-index: 40; display: none; overflow: hidden;
+            animation: menuPop 0.2s var(--smooth-ease) both;
+        }
+        .engine-dropdown div {
+            padding: 10px 16px; font-size: 13px; color: var(--text-color);
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            transition: 0.15s ease;
+        }
+        .engine-dropdown div small { color: var(--text-muted); font-size: 11px; }
+        .engine-dropdown div:hover { background: rgba(255, 255, 255, 0.1); padding-left: 20px; }
+        .search-box {
+            width: 100%;
+            padding: 16px 52px 16px 96px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: var(--text-color);
+            font-family: inherit; font-size: 15px;
+            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45), var(--glass-specular);
+            box-sizing: border-box;
+            transition: all 0.25s var(--smooth-ease);
+        }
+        .search-box::placeholder { color: rgba(248, 250, 252, 0.5); }
+        .search-box:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.13);
+            border-color: var(--accent-purple);
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(184, 155, 248, 0.22), var(--glass-specular);
+        }
+        .search-kbd {
+            position: absolute; right: 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: var(--text-muted);
+            border-radius: 6px; padding: 2px 7px; font-size: 11px; font-weight: 600;
+            pointer-events: none; transition: opacity 0.2s ease;
+        }
+        .search-box:focus + .search-kbd { opacity: 0; }
+
+        /* --- CUSTOMIZE PANEL --- */
+        .customize-btn {
+            position: fixed; bottom: 28px; right: 30px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: var(--text-color);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            padding: 11px 22px;
+            font-family: inherit; font-size: 14px; font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), var(--glass-specular);
+            z-index: 100;
+            transition: 0.2s var(--spring-ease);
+        }
+        .customize-btn:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); transform: translateY(-2px); }
+
+        .side-panel {
+            position: fixed; top: 0; right: -370px;
+            width: 345px; height: 100vh;
+            background: var(--glass-panel);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border-left: 1px solid var(--glass-border);
+            box-shadow: -10px 0 35px rgba(0, 0, 0, 0.6);
+            transition: right 0.32s var(--smooth-ease);
+            z-index: 500;
+            padding: 24px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .side-panel.open { right: 0; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+        .panel-title { font-size: 16px; font-weight: 600; color: var(--text-color); }
+        .close-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%; width: 30px; height: 30px;
+            color: var(--text-muted); font-size: 14px; cursor: pointer; transition: 0.2s;
+        }
+        .close-btn:hover { background: rgba(255, 255, 255, 0.14); color: var(--text-color); transform: rotate(90deg); }
+
+        .setting-row { display: flex; align-items: center; gap: 15px; margin-bottom: 16px; }
+        .setting-text { display: flex; flex-direction: column; }
+        .setting-text span { font-size: 14px; font-weight: 500; color: var(--text-color); }
+        .setting-text small { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255, 255, 255, 0.15); border: 1px solid var(--glass-border); transition: .22s ease; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .22s var(--spring-ease); border-radius: 50%; }
+        input:checked + .slider { background-color: var(--toggle-purple); border-color: var(--toggle-purple); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        .wp-controls-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 14px; margin-bottom: 20px;
+        }
+        .wp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .wp-item {
+            height: 60px; border-radius: 10px; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 1.5px solid var(--glass-border); transition: 0.2s var(--spring-ease); font-size: 16px;
+        }
+        .wp-item:hover, .wp-item.active-mode { border-color: var(--accent-purple); background-color: rgba(184, 155, 248, 0.12); transform: translateY(-2px); }
+        .wp-add { border: 1.5px dashed rgba(255, 255, 255, 0.25); color: var(--text-muted); }
+        .wp-mesh {
+            background: radial-gradient(at 20% 20%, rgba(92, 85, 233, 0.5) 0px, transparent 60%),
+                        radial-gradient(at 80% 80%, rgba(144, 89, 255, 0.45) 0px, transparent 60%), #0B0F19;
+        }
+        .wp-tabliss { background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(59, 130, 246, 0.35)); }
+        .wp-label { font-size: 11px; text-align: center; margin-top: 5px; color: var(--text-muted); }
+        .wp-container { display: flex; flex-direction: column; }
+
+        .panel-control-group { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .panel-control-group label { font-size: 11.5px; color: var(--text-muted); display: flex; justify-content: space-between; }
+        .panel-select, .panel-input {
+            width: 100%; padding: 8px 10px; border-radius: 8px;
+            border: 1px solid var(--glass-border); background: rgba(11, 15, 25, 0.75);
+            color: var(--text-color); font-family: inherit; font-size: 12.5px; box-sizing: border-box; outline: none;
+        }
+        .panel-range { width: 100%; accent-color: var(--toggle-purple); cursor: pointer; }
+        #file-input, #shortcut-image-input { display: none; }
+
+        /* --- MODALS & TOASTS --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 8, 15, 0.65); justify-content: center; align-items: center;
+            z-index: 600; backdrop-filter: blur(6px);
+        }
+        .add-site-modal {
+            background: rgba(22, 28, 45, 0.94); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border-hover); padding: 26px; border-radius: 18px;
+            width: 390px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), var(--glass-specular); box-sizing: border-box;
+        }
+        .modal-header-add { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+        .modal-header-add h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--text-color); }
+        .modal-header-add button { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; }
+        .input-group { margin-bottom: 18px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--text-muted); }
+        .input-group input {
+            width: 100%; padding: 12px 14px; border-radius: 10px;
+            border: 1px solid var(--glass-border); background-color: rgba(11, 15, 25, 0.7);
+            color: var(--text-color); font-family: inherit; font-size: 14px; box-sizing: border-box; outline: none;
+        }
+        .input-group input:focus { border-color: var(--accent-purple); box-shadow: 0 0 0 3px rgba(184, 155, 248, 0.18); }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; }
+        .modal-actions button { padding: 10px 20px; border-radius: 50px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+        .btn-cancel { background: rgba(255, 255, 255, 0.04); border: 1px solid var(--glass-border); color: var(--text-color); cursor: pointer; }
+        .btn-cancel:hover { background: rgba(255, 255, 255, 0.12); border-color: var(--glass-border-hover); }
+        .btn-save { background: var(--toggle-purple); border: none; color: white; }
+
+        .toast-container {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 1200; display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+        }
+        .toast {
+            background: rgba(20, 26, 42, 0.94); backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border-hover); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+            color: var(--text-color); padding: 10px 18px; border-radius: 50px;
+            font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 12px; pointer-events: auto;
+        }
+        .toast-undo-btn {
+            background: var(--toggle-purple); color: white; border: none;
+            border-radius: 20px; padding: 4px 11px; font-size: 12px; font-weight: 600; cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- DEDICATED BACKGROUND & DIMMING LAYERS -->
     <div class="bg-layer" id="bg-layer"></div>
     <div class="bg-overlay" id="bg-overlay"></div>
 
-    <!-- TABLISS BOTTOM-LEFT WALLPAPER & ZEN CONTROLS -->
+    <!-- TABLISS BOTTOM-LEFT CONTROLS -->
     <div class="tabliss-controls" id="tabliss-controls">
-        <button class="tabliss-btn" id="next-wp-btn" onclick="nextTablissWallpaper()" title="Next Tabliss Wallpaper">↻ Next</button>
-        <button class="tabliss-btn" id="lock-wp-btn" onclick="toggleLockWallpaper()" title="Pause/Lock Wallpaper">🔓 Rotate</button>
-        <button class="tabliss-btn" id="zen-mode-btn" onclick="toggleZenMode()" title="Hide Shortcuts & Search (Zen Mode)">👁️ Zen</button>
+        <button type="button" class="tabliss-btn" id="next-wp-btn" onclick="nextTablissWallpaper()">↻ Next</button>
+        <button type="button" class="tabliss-btn" id="lock-wp-btn" onclick="toggleLockWallpaper()">🔓 Rotate</button>
+        <button type="button" class="tabliss-btn" id="zen-mode-btn" onclick="toggleZenMode()">👁️ Zen</button>
         <span class="tabliss-credit" id="tabliss-credit">Tabliss Official</span>
     </div>
 
@@ -33,16 +662,16 @@
     </div>
     <input type="file" id="shortcut-image-input" accept="image/*" onchange="applyCustomImage(event)">
 
-    <!-- LEFT SIDEBAR -->
+    <!-- LEFT SIDEBAR (STARTS AUTO-HIDDEN SO IT NEVER COVERS CLOCK) -->
     <div class="sidebar-hitbox" id="sb-hitbox"></div>
-    <div class="left-sidebar" id="left-sidebar"></div>
+    <div class="left-sidebar auto-hide" id="left-sidebar"></div>
 
     <!-- CLOCK & DATE WIDGET -->
     <div class="time-widget" id="time-widget">
         <div class="time-row">
-            <span class="time-main" id="time-h">2:23</span><span class="time-ampm" id="time-ampm">PM</span>
+            <span class="time-main" id="time-h">12:00</span><span class="time-ampm" id="time-ampm">PM</span>
         </div>
-        <div class="date-sub" id="date-sub">Wednesday, Oct 14</div>
+        <div class="date-sub" id="date-sub">Loading date...</div>
     </div>
     
     <!-- WEATHER WIDGET -->
@@ -61,7 +690,7 @@
             <div class="weather-icon-box" id="w-icon">⛅</div>
             <div class="weather-details">
                 <span class="weather-temp" id="w-temp">--°</span>
-                <span class="weather-cond" id="w-cond">Loading...</span>
+                <span class="weather-cond" id="w-cond">Updating...</span>
                 <span class="weather-highlow" id="w-highlow">↑--° ↓--°</span>
             </div>
         </div>
@@ -74,7 +703,7 @@
         <div class="search-container">
             <form id="search-form" onsubmit="handleSearchSubmit(event)">
                 <div class="search-wrapper">
-                    <button type="button" class="engine-btn" id="engine-btn" onclick="toggleEngineMenu(event)" title="Switch Search Engine">
+                    <button type="button" class="engine-btn" id="engine-btn" onclick="toggleEngineMenu(event)">
                         <span id="engine-label">G</span> ▾
                     </button>
                     <input type="text" id="search-input" class="search-box" placeholder="Search the web or filter shortcuts..." autofocus autocomplete="off" oninput="filterShortcutsLive(this.value)" onkeydown="handleSearchKeydown(event)">
@@ -92,19 +721,19 @@
     </div>
 
     <!-- CUSTOMIZE PANEL -->
-    <button class="customize-btn" onclick="toggleMenu(event)">✦ Customize</button>
+    <button type="button" class="customize-btn" onclick="toggleMenu(event)">✦ Customize</button>
     <div class="side-panel" id="side-panel">
         <div class="panel-header">
             <span class="panel-title">Customize Startpage</span>
-            <button class="close-btn" onclick="toggleMenu(event)">✕</button>
+            <button type="button" class="close-btn" onclick="toggleMenu(event)">✕</button>
         </div>
         
         <div class="setting-row">
-            <label class="switch"><input type="checkbox" id="toggle-sidebar" onchange="applySettings()"><span class="slider"></span></label>
+            <label class="switch"><input type="checkbox" id="toggle-sidebar" checked onchange="applySettings()"><span class="slider"></span></label>
             <div class="setting-text"><span>Show sidebar</span></div>
         </div>
         <div class="setting-row">
-            <label class="switch"><input type="checkbox" id="toggle-sidebar-auto" onchange="applySettings()"><span class="slider"></span></label>
+            <label class="switch"><input type="checkbox" id="toggle-sidebar-auto" checked onchange="applySettings()"><span class="slider"></span></label>
             <div class="setting-text"><span>Auto-hide sidebar</span></div>
         </div>
         <div class="setting-row">
@@ -114,14 +743,14 @@
         <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 18px 0;">
 
         <div class="setting-row">
-            <label class="switch"><input type="checkbox" id="toggle-wp" onchange="applySettings()"><span class="slider"></span></label>
+            <label class="switch"><input type="checkbox" id="toggle-wp" checked onchange="applySettings()"><span class="slider"></span></label>
             <div class="setting-text"><span>Background Wallpaper</span><small>Tabliss 4K, Custom File, or Mesh</small></div>
         </div>
 
         <div class="wp-controls-box" id="wp-controls-box">
             <div class="wp-grid">
                 <div class="wp-container">
-                    <div class="wp-item wp-tabliss" id="mode-tabliss" onclick="selectWallpaperMode('tabliss')">🏞️</div>
+                    <div class="wp-item wp-tabliss active-mode" id="mode-tabliss" onclick="selectWallpaperMode('tabliss')">🏞️</div>
                     <div class="wp-label">Tabliss 4K</div>
                 </div>
                 <div class="wp-container">
@@ -148,7 +777,7 @@
                 </div>
 
                 <div class="panel-control-group">
-                    <label><span>Optional Unsplash Access Key (Live 546+ Pool)</span></label>
+                    <label><span>Optional Unsplash Access Key</span></label>
                     <input type="password" class="panel-input" id="unsplash-key" placeholder="Leave blank for built-in Tabliss 4K pool" onchange="applySettings()">
                 </div>
             </div>
@@ -159,18 +788,18 @@
             </div>
 
             <div class="panel-control-group">
-                <label><span>Dimness (Luminosity)</span><span id="dim-val">25%</span></label>
+                <label><span>Dimness</span><span id="dim-val">25%</span></label>
                 <input type="range" class="panel-range" id="wp-dim" min="0" max="85" value="25" oninput="applyVisualFilters()">
             </div>
         </div>
 
         <div class="setting-row">
-            <label class="switch"><input type="checkbox" id="toggle-weather" onchange="applySettings()"><span class="slider"></span></label>
+            <label class="switch"><input type="checkbox" id="toggle-weather" checked onchange="applySettings()"><span class="slider"></span></label>
             <div class="setting-text"><span>Weather</span><small>Today's forecast at a glance</small></div>
         </div>
         
         <div class="setting-row" style="margin-top: 16px;">
-            <label class="switch"><input type="checkbox" id="toggle-shortcuts" onchange="applySettings()"><span class="slider"></span></label>
+            <label class="switch"><input type="checkbox" id="toggle-shortcuts" checked onchange="applySettings()"><span class="slider"></span></label>
             <div class="setting-text"><span>Main Shortcuts</span></div>
         </div>
         <div class="setting-row">
@@ -178,7 +807,7 @@
             <div class="setting-text"><span>Minimalist SVG Icons</span><small>Unified white Simple Icons</small></div>
         </div>
         <div style="margin-left: 57px; margin-bottom: 18px;">
-            <button class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="resetSort()">Sort Alphabetically</button>
+            <button type="button" class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="resetSort()">Sort Alphabetically</button>
         </div>
 
         <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 18px 0;">
@@ -189,9 +818,9 @@
             </div>
         </div>
         <div style="margin-left: 57px; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
-            <button class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="exportData()">⬇️ Export data.json</button>
-            <button class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="document.getElementById('import-file').click()">⬆️ Import</button>
-            <button class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="loadFromGitHubJSON(true)">🔄 Force Sync GitHub</button>
+            <button type="button" class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="exportData()">⬇️ Export data.json</button>
+            <button type="button" class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="document.getElementById('import-file').click()">⬆️ Import</button>
+            <button type="button" class="btn-cancel" style="padding: 7px 14px; font-size: 11.5px; border-radius: 20px;" onclick="loadFromGitHubJSON(true)">🔄 Force Sync GitHub</button>
             <input type="file" id="import-file" style="display:none" accept=".json" onchange="importData(event)">
         </div>
     </div>
@@ -201,13 +830,13 @@
         <div class="add-site-modal" onclick="event.stopPropagation()">
             <div class="modal-header-add">
                 <h3 id="modal-title">Add site</h3>
-                <button onclick="closeAddModal()">✕</button>
+                <button type="button" onclick="closeAddModal()">✕</button>
             </div>
             <div class="input-group"><label>Name</label><input type="text" id="new-site-name" autocomplete="off" onkeydown="handleEnter(event, 'site')"></div>
             <div class="input-group"><label>URL</label><input type="text" id="new-site-url" autocomplete="off" onkeydown="handleEnter(event, 'site')"></div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeAddModal()">Cancel</button>
-                <button class="btn-save" onclick="saveNewSite()">Save changes</button>
+                <button type="button" class="btn-cancel" onclick="closeAddModal()">Cancel</button>
+                <button type="button" class="btn-save" onclick="saveNewSite()">Save changes</button>
             </div>
         </div>
     </div>
@@ -217,24 +846,61 @@
         <div class="add-site-modal" onclick="event.stopPropagation()">
             <div class="modal-header-add">
                 <h3>Change location</h3>
-                <button onclick="closeWeatherLocModal()">✕</button>
+                <button type="button" onclick="closeWeatherLocModal()">✕</button>
             </div>
             <div class="input-group">
                 <label>City Name</label>
                 <input type="text" id="new-weather-loc" placeholder="e.g. Kansas City" autocomplete="off" onkeydown="handleEnter(event, 'weather')">
             </div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeWeatherLocModal()">Cancel</button>
-                <button class="btn-save" onclick="saveWeatherLocation()">Save changes</button>
+                <button type="button" class="btn-cancel" onclick="closeWeatherLocModal()">Cancel</button>
+                <button type="button" class="btn-save" onclick="saveWeatherLocation()">Save changes</button>
             </div>
         </div>
     </div>
 
-    <!-- GLASSMORPHIC TOAST CONTAINER -->
     <div class="toast-container" id="toast-container"></div>
 
     <script>
-        // --- 0. HARDCODED TABLISS OFFICIAL 4K UNSPLASH POOL (COLLECTION 1053828) ---
+        // --- 0. BUILT-IN DEFAULT SHORTCUTS & TABLISS 4K POOL (NEVER ALLOWS EMPTY SCREEN) ---
+        const DEFAULT_MAIN_SHORTCUTS = [
+            { name: "1337x", url: "https://1337x.to", customImg: "" },
+            { name: "Amazon", url: "https://www.amazon.com", customImg: "" },
+            { name: "Apple TV", url: "https://tv.apple.com", customImg: "" },
+            { name: "Cineby", url: "https://www.cineby.app", customImg: "" },
+            { name: "Copart", url: "https://www.copart.com", customImg: "" },
+            { name: "Credit Karma", url: "https://www.creditkarma.com", customImg: "" },
+            { name: "Disney+", url: "https://www.disneyplus.com", customImg: "" },
+            { name: "Equip-Bid", url: "https://www.equip-bid.com", customImg: "" },
+            { name: "Evergy", url: "https://www.evergy.com", customImg: "" },
+            { name: "Facebook", url: "https://www.facebook.com", customImg: "" },
+            { name: "Gmail", url: "https://mail.google.com", customImg: "" },
+            { name: "HBO Max", url: "https://play.max.com", customImg: "" },
+            { name: "Hulu", url: "https://www.hulu.com", customImg: "" },
+            { name: "KC Water", url: "https://www.kcwater.us", customImg: "" },
+            { name: "Lucid Trading", url: "https://lucidtrading.com", customImg: "" },
+            { name: "Netflix", url: "https://www.netflix.com", customImg: "" },
+            { name: "Nyaa Anime", url: "https://nyaa.si", customImg: "" },
+            { name: "Ola Movies", url: "https://olamovies.top", customImg: "" },
+            { name: "Outlook", url: "https://outlook.live.com", customImg: "" },
+            { name: "PSA", url: "https://psa.wf", customImg: "" },
+            { name: "RARBG Dump", url: "https://rarbgdump.com", customImg: "" },
+            { name: "Seedr", url: "https://www.seedr.cc", customImg: "" },
+            { name: "Spire", url: "https://www.spireenergy.com", customImg: "" },
+            { name: "TamilMV", url: "https://www.1tamilmv.tf", customImg: "" },
+            { name: "Walmart", url: "https://www.walmart.com", customImg: "" },
+            { name: "WhatsApp", url: "https://web.whatsapp.com", customImg: "" },
+            { name: "YIFY Movies", url: "https://yts.mx", customImg: "" },
+            { name: "YouTube", url: "https://www.youtube.com", customImg: "" },
+            { name: "YouTube Music", url: "https://music.youtube.com", customImg: "" }
+        ];
+
+        const DEFAULT_SB_SHORTCUTS = [
+            { url: "https://messenger.com" },
+            { url: "https://web.whatsapp.com" },
+            { url: "https://open.spotify.com" }
+        ];
+
         const TABLISS_WALLPAPERS = [
             { url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2560&q=85", credit: "Bailey Zindel • Yosemite Valley" },
             { url: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=2560&q=85", credit: "v2osk • Misty Highlands" },
@@ -251,27 +917,42 @@
             { url: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=2560&q=85", credit: "Mark Boss • Desert Dunes" },
             { url: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=2560&q=85", credit: "Blake Verdoorn • Multnomah Falls" },
             { url: "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=2560&q=85", credit: "Quino Al • Golden Horizon" },
-            { url: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=2560&q=85", credit: "Vincent Guth • Aurora Borealis" },
-            { url: "https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?auto=format&fit=crop&w=2560&q=85", credit: "Goutham Krishna • Misty Pines" },
-            { url: "https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=2560&q=85", credit: "pine watt • Alpine Winter" }
+            { url: "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=2560&q=85", credit: "Vincent Guth • Aurora Borealis" }
         ];
 
         const MESH_GRADIENT = `
-            radial-gradient(at 15% 15%, rgba(92, 85, 233, 0.20) 0px, transparent 50%),
-            radial-gradient(at 85% 18%, rgba(144, 89, 255, 0.16) 0px, transparent 50%),
-            radial-gradient(at 50% 85%, rgba(56, 189, 248, 0.10) 0px, transparent 55%)
+            radial-gradient(at 15% 15%, rgba(92, 85, 233, 0.22) 0px, transparent 50%),
+            radial-gradient(at 85% 18%, rgba(144, 89, 255, 0.18) 0px, transparent 50%),
+            radial-gradient(at 50% 85%, rgba(56, 189, 248, 0.12) 0px, transparent 55%)
         `;
 
-        // --- 1. INDEXED-DB STORAGE ENGINE ---
+        // Safe JSON parser that never crashes the script
+        function safeParse(str, fallback) {
+            if (!str) return fallback;
+            try {
+                const parsed = JSON.parse(str);
+                return (parsed !== null && parsed !== undefined) ? parsed : fallback;
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        // --- 1. SAFE INDEXED-DB WITH TIMEOUT ---
         const DB_NAME = 'MyStartpageDB';
         const DB_STORE = 'settings';
 
         function openDB() {
             return new Promise((resolve, reject) => {
-                const req = indexedDB.open(DB_NAME, 1);
-                req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
+                const timer = setTimeout(() => reject(new Error('DB timeout')), 1200);
+                try {
+                    const req = indexedDB.open(DB_NAME, 1);
+                    req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+                    req.onsuccess = () => { clearTimeout(timer); resolve(req.result); };
+                    req.onerror = () => { clearTimeout(timer); reject(req.error); };
+                } catch (err) {
+                    clearTimeout(timer);
+                    reject(err);
+                }
             });
         }
 
@@ -299,12 +980,11 @@
                     req.onerror = () => reject(req.error);
                 });
             } catch (e) {
-                let val = localStorage.getItem(key);
-                try { return JSON.parse(val); } catch(err) { return val; }
+                return safeParse(localStorage.getItem(key), null);
             }
         }
 
-        // --- 2. STATE & TABLISS WALLPAPER ENGINE ---
+        // --- 2. STATE INITIALIZATION ---
         let prefs = {
             wpOn: true,
             wpMode: 'tabliss',
@@ -319,11 +999,23 @@
             manualSort: false,
             svgIcons: false,
             use24h: false,
-            searchEngine: 'google'
+            searchEngine: 'google',
+            ...safeParse(localStorage.getItem('myPrefs'), {})
         };
-        let weatherPrefs = { lat: 38.9136, lon: -94.3788, name: "Lee's Summit", unit: "fahrenheit" };
-        let mainShortcuts = [];
-        let sbShortcuts = [];
+
+        let weatherPrefs = {
+            lat: 38.9136,
+            lon: -94.3788,
+            name: "Lee's Summit",
+            unit: "fahrenheit",
+            ...safeParse(localStorage.getItem('myWeatherPrefs'), {})
+        };
+
+        let localMain = safeParse(localStorage.getItem('myShortcuts'), null);
+        let mainShortcuts = (Array.isArray(localMain) && localMain.length > 0) ? localMain : [...DEFAULT_MAIN_SHORTCUTS];
+
+        let localSb = safeParse(localStorage.getItem('mySbShortcuts'), null);
+        let sbShortcuts = (Array.isArray(localSb) && localSb.length > 0) ? localSb : [...DEFAULT_SB_SHORTCUTS];
 
         const SEARCH_ENGINES = {
             google: { label: 'G', name: 'Google', url: 'https://www.google.com/search?q=' },
@@ -351,8 +1043,12 @@
             'open.spotify.com': 'spotify'
         };
 
+        const DOTS_SVG = `<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>`;
+        const CLOSE_SVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>`;
+
         function showToast(message, undoCallback = null) {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             container.innerHTML = '';
             const toast = document.createElement('div');
             toast.className = 'toast';
@@ -362,19 +1058,79 @@
                 const btn = document.createElement('button');
                 btn.className = 'toast-undo-btn';
                 btn.innerText = 'Undo';
-                btn.onclick = () => {
-                    undoCallback();
-                    toast.remove();
-                };
+                btn.onclick = () => { undoCallback(); toast.remove(); };
                 toast.appendChild(btn);
             }
-
             container.appendChild(toast);
-            setTimeout(() => {
-                if (toast.parentElement) toast.remove();
-            }, 4500);
+            setTimeout(() => { if (toast.parentElement) toast.remove(); }, 4500);
         }
 
+        // --- 3. CLOCK & WEATHER (RUNS IMMEDIATELY) ---
+        function updateClock() {
+            const now = new Date();
+            let rawHours = now.getHours();
+            let minutes = now.getMinutes();
+            let ampm = rawHours >= 12 ? 'PM' : 'AM';
+            let displayHours = rawHours;
+
+            const ampmEl = document.getElementById('time-ampm');
+            if (!prefs.use24h) {
+                displayHours = rawHours % 12 || 12;
+                ampmEl.style.display = 'inline';
+                ampmEl.innerText = ampm;
+            } else {
+                displayHours = rawHours < 10 ? '0' + rawHours : rawHours;
+                ampmEl.style.display = 'none';
+            }
+
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('time-h').innerText = `${displayHours}:${minutes}`;
+
+            let greeting = 'Good evening';
+            if (rawHours < 12) greeting = 'Good morning';
+            else if (rawHours < 18) greeting = 'Good afternoon';
+
+            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            document.getElementById('date-sub').innerText = `${greeting} • ${dateStr}`;
+        }
+
+        function mapWmoWeather(code, isDay) {
+            if (code === 0) return { icon: isDay ? '☀️' : '🌙', label: 'Clear Sky' };
+            if (code === 1 || code === 2) return { icon: isDay ? '⛅' : '☁️', label: 'Partly Cloudy' };
+            if (code === 3) return { icon: '☁️', label: 'Overcast' };
+            if (code === 45 || code === 48) return { icon: '🌫️', label: 'Foggy' };
+            if (code >= 51 && code <= 67) return { icon: '🌧️', label: 'Rain' };
+            if (code >= 71 && code <= 77) return { icon: '❄️', label: 'Snow' };
+            if (code >= 80 && code <= 82) return { icon: '🌦️', label: 'Showers' };
+            if (code >= 95) return { icon: '⛈️', label: 'Thunderstorm' };
+            return { icon: '⛅', label: 'Fair' };
+        }
+
+        function fetchWeather() {
+            document.getElementById('weather-loc-name').innerText = weatherPrefs.name || "Lee's Summit";
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${weatherPrefs.lat}&longitude=${weatherPrefs.lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=${weatherPrefs.unit}&timezone=auto`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data || !data.current_weather) return;
+                const cw = data.current_weather;
+                const temp = Math.round(cw.temperature);
+                const high = Math.round(data.daily.temperature_2m_max[0]);
+                const low = Math.round(data.daily.temperature_2m_min[0]);
+                const unitSymbol = weatherPrefs.unit === 'fahrenheit' ? '°F' : '°C';
+                const wmo = mapWmoWeather(cw.weathercode, cw.is_day !== 0);
+
+                document.getElementById('w-icon').innerText = wmo.icon;
+                document.getElementById('w-temp').innerText = `${temp}${unitSymbol}`;
+                document.getElementById('w-cond').innerText = wmo.label;
+                document.getElementById('w-highlow').innerText = `↑${high}° ↓${low}°`;
+                document.querySelector('#weather-dropdown div:nth-child(1)').innerText = weatherPrefs.unit === 'fahrenheit' ? 'Switch to Celsius' : 'Switch to Fahrenheit';
+            })
+            .catch(() => {
+                document.getElementById('w-cond').innerText = 'Offline';
+            });
+        }
+
+        // --- 4. TABLISS WALLPAPER ENGINE ---
         function getRotationIntervalMs(freq) {
             if (freq === 'newtab') return 0;
             if (freq === '15min') return 15 * 60 * 1000;
@@ -384,18 +1140,18 @@
         }
 
         async function resolveTablissWallpaper(forceNext = false) {
-            let state = JSON.parse(localStorage.getItem('myTablissState')) || {
-                index: Math.floor(Math.random() * TABLISS_WALLPAPERS.length),
+            let state = safeParse(localStorage.getItem('myTablissState'), {
+                index: 0,
                 lastChanged: 0,
                 liveUrl: null,
                 liveCredit: null
-            };
+            });
 
             const now = Date.now();
             const interval = getRotationIntervalMs(prefs.wpFreq);
             const shouldRotate = forceNext || (prefs.wpFreq !== 'locked' && (now - state.lastChanged >= interval));
 
-            if (shouldRotate || (!state.liveUrl && state.lastChanged === 0)) {
+            if (shouldRotate || state.lastChanged === 0) {
                 if (prefs.unsplashKey && prefs.unsplashKey.trim().length > 10) {
                     try {
                         const res = await fetch(`https://api.unsplash.com/photos/random?collections=1053828&orientation=landscape&client_id=${prefs.unsplashKey.trim()}`);
@@ -407,12 +1163,9 @@
                             localStorage.setItem('myTablissState', JSON.stringify(state));
                             return { url: state.liveUrl, credit: state.liveCredit };
                         }
-                    } catch (e) {
-                        console.warn("Unsplash API fallback to hardcoded Tabliss pool:", e);
-                    }
+                    } catch (e) {}
                 }
-
-                state.index = (state.index + 1 + Math.floor(Math.random() * (TABLISS_WALLPAPERS.length - 1))) % TABLISS_WALLPAPERS.length;
+                state.index = ( (state.index || 0) + 1 ) % TABLISS_WALLPAPERS.length;
                 state.liveUrl = null;
                 state.liveCredit = null;
                 state.lastChanged = now;
@@ -420,14 +1173,12 @@
             }
 
             if (state.liveUrl) return { url: state.liveUrl, credit: state.liveCredit };
-            return TABLISS_WALLPAPERS[state.index % TABLISS_WALLPAPERS.length];
+            return TABLISS_WALLPAPERS[(state.index || 0) % TABLISS_WALLPAPERS.length];
         }
 
         async function nextTablissWallpaper() {
-            if (prefs.wpMode !== 'tabliss') {
-                prefs.wpMode = 'tabliss';
-                localStorage.setItem('myPrefs', JSON.stringify(prefs));
-            }
+            prefs.wpMode = 'tabliss';
+            localStorage.setItem('myPrefs', JSON.stringify(prefs));
             const item = await resolveTablissWallpaper(true);
             document.getElementById('bg-layer').style.backgroundImage = `url('${item.url}')`;
             document.getElementById('tabliss-credit').innerText = item.credit;
@@ -452,6 +1203,7 @@
 
         function updateLockButtonUI() {
             const btn = document.getElementById('lock-wp-btn');
+            if (!btn) return;
             if (prefs.wpFreq === 'locked') {
                 btn.innerText = '🔒 Locked';
                 btn.style.borderColor = 'var(--accent-purple)';
@@ -491,70 +1243,132 @@
             bgLayer.style.filter = prefs.wpBlur > 0 ? `blur(${prefs.wpBlur}px)` : 'none';
             bgLayer.style.transform = prefs.wpBlur > 0 ? 'scale(1.06)' : 'scale(1)';
             bgOverlay.style.background = `rgba(0, 0, 0, ${prefs.wpDim / 100})`;
-
             localStorage.setItem('myPrefs', JSON.stringify(prefs));
         }
 
-        setInterval(async () => {
-            if (prefs.wpOn && prefs.wpMode === 'tabliss' && prefs.wpFreq !== 'locked' && prefs.wpFreq !== 'newtab') {
-                const item = await resolveTablissWallpaper(false);
-                document.getElementById('bg-layer').style.backgroundImage = `url('${item.url}')`;
-                document.getElementById('tabliss-credit').innerText = item.credit;
-            }
-        }, 60000);
-
-        // --- 3. SMART GITHUB `data.json` AUTO-SYNC & STORAGE INIT ---
-        function simpleHash(str) {
-            let h = 0;
-            for (let i = 0; i < str.length; i++) {
-                h = ((h << 5) - h) + str.charCodeAt(i);
-                h |= 0;
-            }
-            return String(h);
+        // --- 5. SHORTCUTS & RENDERING ---
+        function getCleanDomain(url) {
+            return String(url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').split(/[/?#]/)[0];
         }
 
-        async function loadFromGitHubJSON(forceReload = false) {
-            try {
-                const res = await fetch('./data.json?t=' + Date.now(), { cache: 'no-store' });
-                if (!res.ok) throw new Error('Could not fetch data.json');
-                const rawText = await res.text();
-                const currentHash = simpleHash(rawText);
-                const lastHash = localStorage.getItem('lastGitHubJsonHash');
+        function resolveIconUrl(sc) {
+            if (sc.customImg) return sc.customImg;
+            const cleanDomain = getCleanDomain(sc.url);
+            if (prefs.svgIcons) {
+                const slug = SIMPLE_ICON_SLUGS[cleanDomain] || cleanDomain.split('.')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+                return `https://cdn.simpleicons.org/${slug}/f8fafc`;
+            }
+            return `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
+        }
 
-                // Only overwrite if forced, first load, or if `data.json` on GitHub actually changed!
-                if (!forceReload && lastHash && lastHash === currentHash) {
-                    return false;
-                }
-
-                const data = JSON.parse(rawText);
-                localStorage.setItem('lastGitHubJsonHash', currentHash);
-
-                if (data.prefs) { prefs = { ...prefs, ...data.prefs }; localStorage.setItem('myPrefs', JSON.stringify(prefs)); }
-                if (data.weatherPrefs) { weatherPrefs = data.weatherPrefs; localStorage.setItem('myWeatherPrefs', JSON.stringify(weatherPrefs)); }
-                if (data.mainShortcuts) mainShortcuts = data.mainShortcuts;
-                if (data.sbShortcuts) sbShortcuts = data.sbShortcuts;
-                if (data.wallpaper && data.wallpaper !== 'none') await dbSet('myWallpaper', data.wallpaper);
-
-                if (!prefs.manualSort) sortShortcutsAlphabetically();
-                await persistShortcuts();
-                syncToggles();
-                fetchWeather();
-                await updateUI();
-                renderGrids();
-                if (forceReload || lastHash) showToast("Synced latest changes from GitHub data.json");
-                return true;
-            } catch (err) {
-                console.warn("GitHub JSON check skipped or failed:", err);
-                return false;
+        function handleIconError(imgEl, fallbackUrl, labelText) {
+            if (!imgEl.dataset.triedFallback && fallbackUrl) {
+                imgEl.dataset.triedFallback = 'true';
+                imgEl.src = fallbackUrl;
+            } else {
+                const initials = (labelText || '?').trim().slice(0, 2);
+                const span = document.createElement('span');
+                span.className = 'icon-fallback';
+                span.innerText = initials;
+                imgEl.replaceWith(span);
             }
         }
 
+        function sortShortcutsAlphabetically() {
+            if (!prefs.manualSort && Array.isArray(mainShortcuts)) {
+                mainShortcuts.sort((a, b) => String(a.name || '').toLowerCase().localeCompare(String(b.name || '').toLowerCase()));
+            }
+        }
+
+        async function resetSort() {
+            prefs.manualSort = false;
+            localStorage.setItem('myPrefs', JSON.stringify(prefs));
+            sortShortcutsAlphabetically();
+            await persistShortcuts();
+            renderGrids();
+            showToast("Shortcuts sorted alphabetically");
+        }
+
+        async function persistShortcuts() {
+            try { localStorage.setItem('myShortcuts', JSON.stringify(mainShortcuts)); } catch(e){}
+            try { localStorage.setItem('mySbShortcuts', JSON.stringify(sbShortcuts)); } catch(e){}
+            await dbSet('myShortcuts', mainShortcuts);
+            await dbSet('mySbShortcuts', sbShortcuts);
+        }
+
+        let activeShortcutIndex = null;
+        let isEditing = false;
+        let targetList = 'main';
+        const contextMenu = document.getElementById('context-menu');
+        let draggedIndex = null;
+        let draggedType = null;
+
+        function renderGrids() {
+            const mGrid = document.getElementById('shortcut-grid');
+            if (!mGrid) return;
+            mGrid.innerHTML = '';
+
+            mainShortcuts.forEach((sc, index) => {
+                if (!sc || !sc.url) return;
+                const cleanDomain = getCleanDomain(sc.url);
+                const primarySrc = resolveIconUrl(sc);
+                const fallbackFavicon = `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
+                const safeName = String(sc.name || cleanDomain).replace(/'/g, "\\'");
+                const searchKey = String(sc.name || '').toLowerCase().replace(/"/g, '');
+
+                mGrid.innerHTML += `
+                    <div class="shortcut-wrapper" style="--i: ${index}" draggable="true" data-name="${searchKey}"
+                         oncontextmenu="openContextMenu(event, ${index})"
+                         ondragstart="handleDragStart(event, ${index}, 'main')"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)"
+                         ondrop="handleDrop(event, ${index}, 'main')"
+                         ondragend="handleDragEnd(event)">
+                        <a href="${sc.url}" class="icon-box" draggable="false">
+                            <img src="${primarySrc}" draggable="false" onerror="handleIconError(this, '${fallbackFavicon}', '${safeName}')">
+                        </a>
+                        <div class="shortcut-label">${sc.name || cleanDomain}</div>
+                        <button type="button" class="menu-trigger" onclick="openContextMenu(event, ${index})" aria-label="Options">${DOTS_SVG}</button>
+                    </div>`;
+            });
+
+            mGrid.innerHTML += `
+                <div class="shortcut-wrapper" style="--i: ${mainShortcuts.length}" onclick="openAddModal('main')" style="cursor:pointer;">
+                    <div class="icon-box" style="border: 1.5px dashed rgba(255,255,255,0.22); background: rgba(255,255,255,0.03); font-size: 24px; color: #94a3b8; box-shadow: none;">+</div>
+                    <div class="shortcut-label">Add</div>
+                </div>`;
+
+            const sGrid = document.getElementById('left-sidebar');
+            if (!sGrid) return;
+            sGrid.innerHTML = '';
+            sbShortcuts.forEach((sc, index) => {
+                if (!sc || !sc.url) return;
+                const cleanDomain = getCleanDomain(sc.url);
+                const primarySrc = resolveIconUrl(sc);
+                const fallbackFavicon = `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
+                sGrid.innerHTML += `
+                    <div class="sb-item-wrapper" draggable="true"
+                         ondragstart="handleDragStart(event, ${index}, 'sidebar')"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)"
+                         ondrop="handleDrop(event, ${index}, 'sidebar')"
+                         ondragend="handleDragEnd(event)">
+                        <a href="${sc.url}" class="sb-icon" draggable="false">
+                            <img src="${primarySrc}" draggable="false" onerror="handleIconError(this, '${fallbackFavicon}', '${cleanDomain}')">
+                        </a>
+                        <div class="sb-delete" onclick="deleteSidebarShortcut(${index})" title="Remove">${CLOSE_SVG}</div>
+                    </div>`;
+            });
+            sGrid.innerHTML += `<div class="sb-icon sb-add" onclick="openAddModal('sidebar')">+</div>`;
+        }
+
+        // --- 6. UI CONTROLS & SETTINGS ---
         function syncToggles() {
-            document.getElementById('toggle-wp').checked = prefs.wpOn;
-            document.getElementById('toggle-weather').checked = prefs.weatherOn;
-            document.getElementById('toggle-shortcuts').checked = prefs.shortcutsOn;
-            document.getElementById('toggle-sidebar').checked = prefs.sbOn;
-            document.getElementById('toggle-sidebar-auto').checked = prefs.sbAuto;
+            document.getElementById('toggle-wp').checked = !!prefs.wpOn;
+            document.getElementById('toggle-weather').checked = !!prefs.weatherOn;
+            document.getElementById('toggle-shortcuts').checked = !!prefs.shortcutsOn;
+            document.getElementById('toggle-sidebar').checked = !!prefs.sbOn;
+            document.getElementById('toggle-sidebar-auto').checked = !!prefs.sbAuto;
             document.getElementById('toggle-svg-icons').checked = !!prefs.svgIcons;
             document.getElementById('toggle-24h').checked = !!prefs.use24h;
             document.getElementById('wp-frequency').value = prefs.wpFreq || '15min';
@@ -566,38 +1380,63 @@
             updateLockButtonUI();
         }
 
-        async function initStorage() {
-            const localPrefs = localStorage.getItem('myPrefs');
-            const savedMain = await dbGet('myShortcuts');
+        async function updateUI() {
+            document.getElementById('weather-widget').style.display = prefs.weatherOn ? 'block' : 'none';
+            document.getElementById('shortcut-grid').style.display = prefs.shortcutsOn ? 'flex' : 'none';
+            document.getElementById('wp-controls-box').style.display = prefs.wpOn ? 'block' : 'none';
 
-            if (!localPrefs && (!savedMain || !Array.isArray(savedMain))) {
-                await loadFromGitHubJSON(true);
-                updateClock();
-                return;
+            applyVisualFilters();
+            updateModeHighlight();
+
+            const sb = document.getElementById('left-sidebar');
+            const hitbox = document.getElementById('sb-hitbox');
+            const main = document.getElementById('main-content');
+            const clock = document.getElementById('time-widget');
+            const tablissCtrl = document.getElementById('tabliss-controls');
+
+            if (!prefs.sbOn) {
+                sb.style.display = 'none';
+                hitbox.style.display = 'none';
+                main.classList.remove('shifted');
+                clock.style.left = '50px';
+                tablissCtrl.style.left = '45px';
+            } else {
+                sb.style.display = 'flex';
+                if (prefs.sbAuto) {
+                    sb.classList.add('auto-hide');
+                    hitbox.style.display = 'block';
+                    main.classList.remove('shifted');
+                    clock.style.left = '50px';
+                    tablissCtrl.style.left = '45px';
+                } else {
+                    sb.classList.remove('auto-hide');
+                    hitbox.style.display = 'none';
+                    main.classList.add('shifted');
+                    clock.style.left = '95px';
+                    tablissCtrl.style.left = '90px';
+                }
             }
 
-            if (localPrefs) prefs = { ...prefs, ...JSON.parse(localPrefs) };
-            const localWeather = localStorage.getItem('myWeatherPrefs');
-            if (localWeather) weatherPrefs = JSON.parse(localWeather);
-
-            if (savedMain && Array.isArray(savedMain)) mainShortcuts = savedMain;
-            const savedSb = await dbGet('mySbShortcuts');
-            if (savedSb && Array.isArray(savedSb)) sbShortcuts = savedSb;
-
-            syncToggles();
-            if (!prefs.manualSort) { sortShortcutsAlphabetically(); await persistShortcuts(); }
-            updateClock();
-            fetchWeather();
-            await updateUI();
-            renderGrids();
-
-            // Check in background if user committed a newer `data.json` to GitHub
-            loadFromGitHubJSON(false);
+            const bgLayer = document.getElementById('bg-layer');
+            if (!prefs.wpOn || prefs.wpMode === 'mesh') {
+                bgLayer.style.backgroundImage = MESH_GRADIENT;
+            } else if (prefs.wpMode === 'custom') {
+                let savedBg = await dbGet('myWallpaper') || localStorage.getItem('myWallpaper') || 'none';
+                if (savedBg && savedBg !== 'none') {
+                    bgLayer.style.backgroundImage = `url('${savedBg}')`;
+                } else {
+                    bgLayer.style.backgroundImage = MESH_GRADIENT;
+                }
+            } else {
+                const item = await resolveTablissWallpaper(false);
+                bgLayer.style.backgroundImage = `url('${item.url}')`;
+                document.getElementById('tabliss-credit').innerText = item.credit;
+            }
         }
 
-        function toggleMenu(event) { 
-            if(event) event.stopPropagation();
-            document.getElementById('side-panel').classList.toggle('open'); 
+        function toggleMenu(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('side-panel').classList.toggle('open');
         }
 
         function applySettings() {
@@ -617,51 +1456,6 @@
             renderGrids();
         }
 
-        async function updateUI() {
-            document.getElementById('weather-widget').style.display = prefs.weatherOn ? 'block' : 'none';
-            document.getElementById('shortcut-grid').style.display = prefs.shortcutsOn ? 'flex' : 'none';
-            document.getElementById('wp-controls-box').style.display = prefs.wpOn ? 'block' : 'none';
-
-            applyVisualFilters();
-            updateModeHighlight();
-
-            const bgLayer = document.getElementById('bg-layer');
-            if (!prefs.wpOn || prefs.wpMode === 'mesh') {
-                bgLayer.style.backgroundImage = MESH_GRADIENT;
-            } else if (prefs.wpMode === 'custom') {
-                let savedBg = await dbGet('myWallpaper') || localStorage.getItem('myWallpaper') || 'none';
-                if (savedBg && savedBg !== 'none') {
-                    bgLayer.style.backgroundImage = `url('${savedBg}')`;
-                } else {
-                    bgLayer.style.backgroundImage = MESH_GRADIENT;
-                }
-            } else {
-                const item = await resolveTablissWallpaper(false);
-                bgLayer.style.backgroundImage = `url('${item.url}')`;
-                document.getElementById('tabliss-credit').innerText = item.credit;
-            }
-
-            const sb = document.getElementById('left-sidebar');
-            const hitbox = document.getElementById('sb-hitbox');
-            const main = document.getElementById('main-content');
-            const clock = document.getElementById('time-widget');
-            const tablissCtrl = document.getElementById('tabliss-controls');
-
-            if (!prefs.sbOn) {
-                sb.style.display = 'none'; hitbox.style.display = 'none';
-                main.classList.remove('shifted'); clock.style.left = '55px'; tablissCtrl.style.left = '35px';
-            } else {
-                sb.style.display = 'flex';
-                if (prefs.sbAuto) {
-                    sb.classList.add('auto-hide'); hitbox.style.display = 'block';
-                    main.classList.remove('shifted'); clock.style.left = '55px'; tablissCtrl.style.left = '35px';
-                } else {
-                    sb.classList.remove('auto-hide'); hitbox.style.display = 'none';
-                    main.classList.add('shifted'); clock.style.left = '95px'; tablissCtrl.style.left = '85px';
-                }
-            }
-        }
-
         function setCustomWallpaper(event) {
             const file = event.target.files[0];
             if (file) {
@@ -678,81 +1472,18 @@
             }
         }
 
-        // --- 4. CLOCK, DATE & DYNAMIC WMO WEATHER ---
-        function updateClock() {
-            const now = new Date();
-            let rawHours = now.getHours();
-            let minutes = now.getMinutes();
-            let ampm = rawHours >= 12 ? 'PM' : 'AM';
-            let displayHours = rawHours;
-
-            if (!prefs.use24h) {
-                displayHours = rawHours % 12;
-                displayHours = displayHours ? displayHours : 12;
-                document.getElementById('time-ampm').style.display = 'inline';
-                document.getElementById('time-ampm').innerText = ampm;
-            } else {
-                displayHours = rawHours < 10 ? '0' + rawHours : rawHours;
-                document.getElementById('time-ampm').style.display = 'none';
-            }
-
-            minutes = minutes < 10 ? '0' + minutes : minutes;
-            document.getElementById('time-h').innerText = `${displayHours}:${minutes}`;
-
-            let greeting = 'Good evening';
-            if (rawHours < 12) greeting = 'Good morning';
-            else if (rawHours < 18) greeting = 'Good afternoon';
-
-            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-            document.getElementById('date-sub').innerText = `${greeting} • ${dateStr}`;
-        }
-        setInterval(updateClock, 1000);
-
-        function mapWmoWeather(code, isDay) {
-            if (code === 0) return { icon: isDay ? '☀️' : '🌙', label: 'Clear Sky' };
-            if (code === 1 || code === 2) return { icon: isDay ? '⛅' : '☁️', label: 'Partly Cloudy' };
-            if (code === 3) return { icon: '☁️', label: 'Overcast' };
-            if (code === 45 || code === 48) return { icon: '🌫️', label: 'Foggy' };
-            if (code >= 51 && code <= 67) return { icon: '🌧️', label: 'Rain' };
-            if (code >= 71 && code <= 77) return { icon: '❄️', label: 'Snow' };
-            if (code >= 80 && code <= 82) return { icon: '🌦️', label: 'Rain Showers' };
-            if (code >= 95) return { icon: '⛈️', label: 'Thunderstorm' };
-            return { icon: '⛅', label: 'Fair' };
-        }
-
-        function fetchWeather() {
-            document.getElementById('weather-loc-name').innerText = weatherPrefs.name;
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${weatherPrefs.lat}&longitude=${weatherPrefs.lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&temperature_unit=${weatherPrefs.unit}&timezone=auto`)
-            .then(res => res.json())
-            .then(data => {
-                const cw = data.current_weather;
-                const temp = Math.round(cw.temperature);
-                const high = Math.round(data.daily.temperature_2m_max[0]);
-                const low = Math.round(data.daily.temperature_2m_min[0]);
-                const unitSymbol = weatherPrefs.unit === 'fahrenheit' ? '°F' : '°C';
-                const wmo = mapWmoWeather(cw.weathercode, cw.is_day !== 0);
-
-                document.getElementById('w-icon').innerText = wmo.icon;
-                document.getElementById('w-temp').innerText = `${temp}${unitSymbol}`;
-                document.getElementById('w-cond').innerText = wmo.label;
-                document.getElementById('w-highlow').innerText = `↑${high}° ↓${low}°`;
-                document.querySelector('#weather-dropdown div:nth-child(1)').innerText = weatherPrefs.unit === 'fahrenheit' ? 'Switch to Celsius' : 'Switch to Fahrenheit';
-            });
-        }
-
+        // --- 7. WEATHER & SEARCH ACTIONS ---
         function toggleWeatherMenu(e) {
             e.stopPropagation();
             const dropdown = document.getElementById('weather-dropdown');
             const btn = document.getElementById('weather-menu-btn');
-            if (dropdown.style.display === 'block') {
-                dropdown.style.display = 'none'; btn.classList.remove('active');
-            } else {
-                dropdown.style.display = 'block'; btn.classList.add('active');
-            }
+            const isOpen = dropdown.style.display === 'block';
+            dropdown.style.display = isOpen ? 'none' : 'block';
+            btn.classList.toggle('active', !isOpen);
         }
 
         function toggleWeatherUnit(e) {
-            if(e) e.stopPropagation();
+            if (e) e.stopPropagation();
             weatherPrefs.unit = weatherPrefs.unit === 'fahrenheit' ? 'celsius' : 'fahrenheit';
             localStorage.setItem('myWeatherPrefs', JSON.stringify(weatherPrefs));
             fetchWeather();
@@ -784,13 +1515,12 @@
                         localStorage.setItem('myWeatherPrefs', JSON.stringify(weatherPrefs));
                         fetchWeather();
                         closeWeatherLocModal();
-                        showToast(`Weather location set to ${weatherPrefs.name}`);
+                        showToast(`Weather set to ${weatherPrefs.name}`);
                     } else { showToast("Location not found"); }
                 } catch (e) { showToast("Error connecting to weather service"); }
             }
         }
 
-        // --- 5. MULTI-ENGINE SEARCH & LIVE SHORTCUT FILTERING ---
         function toggleEngineMenu(e) {
             e.stopPropagation();
             const menu = document.getElementById('engine-dropdown');
@@ -806,7 +1536,7 @@
         }
 
         function filterShortcutsLive(query) {
-            const q = query.trim().toLowerCase();
+            const q = String(query || '').trim().toLowerCase();
             const cards = document.querySelectorAll('#shortcut-grid .shortcut-wrapper[data-name]');
             cards.forEach(card => {
                 if (!q || q.startsWith('!')) {
@@ -824,10 +1554,7 @@
         function handleSearchKeydown(e) {
             if (e.altKey && e.key === 'Enter') {
                 const match = document.querySelector('#shortcut-grid .shortcut-wrapper.search-match a');
-                if (match) {
-                    e.preventDefault();
-                    window.location.href = match.href;
-                }
+                if (match) { e.preventDefault(); window.location.href = match.href; }
             }
         }
 
@@ -852,128 +1579,15 @@
                     break;
                 }
             }
-
             window.location.href = engineUrl + encodeURIComponent(raw);
         }
 
-        // --- 6. SHORTCUTS, SVG 3-DOT MENU & DRAG-AND-DROP ---
-        const DOTS_SVG = `<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>`;
-        const CLOSE_SVG = `<svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>`;
-
-        function getCleanDomain(url) {
-            return url.replace(/^https?:\/\//, '').replace(/^www\./, '').split(/[/?#]/)[0];
-        }
-
-        function resolveIconUrl(sc) {
-            if (sc.customImg) return sc.customImg;
-            const cleanDomain = getCleanDomain(sc.url);
-            if (prefs.svgIcons) {
-                const slug = SIMPLE_ICON_SLUGS[cleanDomain] || cleanDomain.split('.')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-                return `https://cdn.simpleicons.org/${slug}/f8fafc`;
-            }
-            return `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
-        }
-
-        function handleIconError(imgEl, fallbackUrl, labelText) {
-            if (!imgEl.dataset.triedFallback && fallbackUrl) {
-                imgEl.dataset.triedFallback = 'true';
-                imgEl.src = fallbackUrl;
-            } else {
-                const initials = (labelText || '?').trim().slice(0, 2);
-                const span = document.createElement('span');
-                span.className = 'icon-fallback';
-                span.innerText = initials;
-                imgEl.replaceWith(span);
-            }
-        }
-
-        function sortShortcutsAlphabetically() {
-            if (!prefs.manualSort) {
-                mainShortcuts.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-            }
-        }
-
-        async function resetSort() {
-            prefs.manualSort = false;
-            localStorage.setItem('myPrefs', JSON.stringify(prefs));
-            sortShortcutsAlphabetically();
-            await persistShortcuts();
-            renderGrids();
-            showToast("Shortcuts sorted alphabetically");
-        }
-
-        async function persistShortcuts() {
-            await dbSet('myShortcuts', mainShortcuts);
-            await dbSet('mySbShortcuts', sbShortcuts);
-            try { localStorage.setItem('myShortcuts', JSON.stringify(mainShortcuts)); } catch(e){}
-            try { localStorage.setItem('mySbShortcuts', JSON.stringify(sbShortcuts)); } catch(e){}
-        }
-
-        let activeShortcutIndex = null;
-        let isEditing = false;
-        let targetList = 'main'; 
-        const contextMenu = document.getElementById('context-menu');
-        let draggedIndex = null;
-        let draggedType = null;
-
-        function renderGrids() {
-            const mGrid = document.getElementById('shortcut-grid');
-            mGrid.innerHTML = '';
-            mainShortcuts.forEach((sc, index) => {
-                const cleanDomain = getCleanDomain(sc.url);
-                const primarySrc = resolveIconUrl(sc);
-                const fallbackFavicon = `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
-                const safeName = (sc.name || cleanDomain).replace(/'/g, "\\'");
-                const searchKey = (sc.name || '').toLowerCase().replace(/"/g, '');
-
-                mGrid.innerHTML += `
-                    <div class="shortcut-wrapper" style="--i: ${index}" draggable="true" data-name="${searchKey}"
-                         oncontextmenu="openContextMenu(event, ${index})"
-                         ondragstart="handleDragStart(event, ${index}, 'main')"
-                         ondragover="handleDragOver(event)"
-                         ondragleave="handleDragLeave(event)"
-                         ondrop="handleDrop(event, ${index}, 'main')"
-                         ondragend="handleDragEnd(event)">
-                        <a href="${sc.url}" class="icon-box" draggable="false">
-                            <img src="${primarySrc}" draggable="false" onerror="handleIconError(this, '${fallbackFavicon}', '${safeName}')">
-                        </a>
-                        <div class="shortcut-label">${sc.name}</div>
-                        <button type="button" class="menu-trigger" onclick="openContextMenu(event, ${index})" aria-label="Shortcut options">${DOTS_SVG}</button>
-                    </div>`;
-            });
-            mGrid.innerHTML += `
-                <div class="shortcut-wrapper" style="--i: ${mainShortcuts.length}" onclick="openAddModal('main')" style="cursor:pointer;">
-                    <div class="icon-box" style="border: 1.5px dashed rgba(255,255,255,0.22); background: rgba(255,255,255,0.03); font-size: 24px; color: #94a3b8; box-shadow: none;">+</div>
-                    <div class="shortcut-label">Add</div>
-                </div>`;
-
-            const sGrid = document.getElementById('left-sidebar');
-            sGrid.innerHTML = '';
-            sbShortcuts.forEach((sc, index) => {
-                const cleanDomain = getCleanDomain(sc.url);
-                const primarySrc = resolveIconUrl(sc);
-                const fallbackFavicon = `https://www.google.com/s2/favicons?domain=${cleanDomain}&sz=128`;
-                sGrid.innerHTML += `
-                    <div class="sb-item-wrapper" draggable="true"
-                         ondragstart="handleDragStart(event, ${index}, 'sidebar')"
-                         ondragover="handleDragOver(event)"
-                         ondragleave="handleDragLeave(event)"
-                         ondrop="handleDrop(event, ${index}, 'sidebar')"
-                         ondragend="handleDragEnd(event)">
-                        <a href="${sc.url}" class="sb-icon" draggable="false">
-                            <img src="${primarySrc}" draggable="false" onerror="handleIconError(this, '${fallbackFavicon}', '${cleanDomain}')">
-                        </a>
-                        <div class="sb-delete" onclick="deleteSidebarShortcut(${index})" title="Remove">${CLOSE_SVG}</div>
-                    </div>`;
-            });
-            sGrid.innerHTML += `<div class="sb-icon sb-add" onclick="openAddModal('sidebar')">+</div>`;
-        }
-
+        // --- 8. DRAG-AND-DROP & SHORTCUT CRUD ---
         function handleDragStart(e, index, type) {
             draggedIndex = index; draggedType = type;
             e.dataTransfer.effectAllowed = "move";
             let el = e.target.closest('.shortcut-wrapper, .sb-item-wrapper');
-            if(el) setTimeout(() => el.classList.add('dragging'), 0);
+            if (el) setTimeout(() => el.classList.add('dragging'), 0);
         }
         function handleDragOver(e) {
             e.preventDefault(); e.dataTransfer.dropEffect = "move";
@@ -997,32 +1611,32 @@
                 let list = (type === 'main') ? mainShortcuts : sbShortcuts;
                 let draggedItem = list.splice(draggedIndex, 1)[0];
                 list.splice(targetIndex, 0, draggedItem);
-                await persistShortcuts();
                 renderGrids();
+                await persistShortcuts();
             }
             draggedIndex = null; draggedType = null;
         }
         function handleDragEnd(e) {
             let el = e.target.closest('.shortcut-wrapper, .sb-item-wrapper');
-            if(el) el.classList.remove('dragging');
+            if (el) el.classList.remove('dragging');
             draggedIndex = null; draggedType = null;
         }
 
         async function deleteSidebarShortcut(index) {
             const removed = sbShortcuts.splice(index, 1)[0];
-            await persistShortcuts();
             renderGrids();
+            await persistShortcuts();
             showToast("Sidebar shortcut removed", async () => {
                 sbShortcuts.splice(index, 0, removed);
-                await persistShortcuts();
                 renderGrids();
+                await persistShortcuts();
             });
         }
 
         function openContextMenu(event, index) {
             event.preventDefault(); event.stopPropagation();
             document.querySelectorAll('.menu-trigger.active').forEach(b => b.classList.remove('active'));
-            const triggerBtn = event.currentTarget.classList && event.currentTarget.classList.contains('menu-trigger') ? event.currentTarget : null;
+            const triggerBtn = event.currentTarget && event.currentTarget.classList && event.currentTarget.classList.contains('menu-trigger') ? event.currentTarget : null;
             if (triggerBtn) triggerBtn.classList.add('active');
 
             activeShortcutIndex = index;
@@ -1043,7 +1657,7 @@
             if (action === 'new-tab') { window.open(sc.url, '_blank'); }
             else if (action === 'new-window') { window.open(sc.url, '_blank', 'height=800,width=1200'); }
             else if (action === 'private') { showToast("Use browser right-click > Open in New Private Window"); }
-            else if (action === 'edit') { 
+            else if (action === 'edit') {
                 isEditing = true; targetList = 'main';
                 document.getElementById('modal-title').innerText = "Edit site";
                 document.getElementById('new-site-name').value = sc.name;
@@ -1054,13 +1668,13 @@
             else if (action === 'image') { document.getElementById('shortcut-image-input').click(); }
             else if (action === 'delete') {
                 const removed = mainShortcuts.splice(idx, 1)[0];
-                await persistShortcuts();
                 renderGrids();
+                await persistShortcuts();
                 showToast(`Moved "${removed.name}" to Trash`, async () => {
                     mainShortcuts.splice(idx, 0, removed);
                     sortShortcutsAlphabetically();
-                    await persistShortcuts();
                     renderGrids();
+                    await persistShortcuts();
                 });
             }
         }
@@ -1075,4 +1689,197 @@
                         const canvas = document.createElement('canvas');
                         canvas.width = 128; canvas.height = 128;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, 128, 128
+                        ctx.drawImage(img, 0, 0, 128, 128);
+                        mainShortcuts[activeShortcutIndex].customImg = canvas.toDataURL('image/png');
+                        renderGrids();
+                        await persistShortcuts();
+                        showToast("Custom shortcut icon updated");
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function openAddModal(listType) {
+            isEditing = false; activeShortcutIndex = null; targetList = listType;
+            document.getElementById('modal-title').innerText = listType === 'main' ? "Add site" : "Add to Sidebar";
+            document.getElementById('new-site-name').value = '';
+            document.getElementById('new-site-url').value = '';
+            document.getElementById('new-site-name').parentElement.style.display = listType === 'sidebar' ? 'none' : 'block';
+            document.getElementById('add-site-overlay').style.display = 'flex';
+            if (listType === 'main') document.getElementById('new-site-name').focus();
+            else document.getElementById('new-site-url').focus();
+        }
+
+        function closeAddModal() { document.getElementById('add-site-overlay').style.display = 'none'; }
+
+        function handleEnter(e, target) {
+            if (e.key === 'Enter') {
+                if (target === 'site') saveNewSite();
+                else if (target === 'weather') saveWeatherLocation();
+            }
+        }
+
+        async function saveNewSite() {
+            let name = document.getElementById('new-site-name').value.trim();
+            let url = document.getElementById('new-site-url').value.trim();
+            if (!url.startsWith('http') && url.length > 0) url = 'https://' + url;
+
+            if (targetList === 'main') {
+                if (name && url) {
+                    if (isEditing && activeShortcutIndex !== null) {
+                        mainShortcuts[activeShortcutIndex].name = name;
+                        mainShortcuts[activeShortcutIndex].url = url;
+                    } else { mainShortcuts.push({ name, url, customImg: "" }); }
+                    sortShortcutsAlphabetically();
+                    renderGrids(); closeAddModal();
+                    await persistShortcuts();
+                } else { showToast("Please enter both a Name and a URL"); }
+            } else if (targetList === 'sidebar') {
+                if (url) {
+                    sbShortcuts.push({ url });
+                    renderGrids(); closeAddModal();
+                    await persistShortcuts();
+                } else { showToast("Please enter a URL"); }
+            }
+        }
+
+        // --- 9. GITHUB `data.json` SYNC & EXPORT ---
+        function simpleHash(str) {
+            let h = 0;
+            for (let i = 0; i < str.length; i++) {
+                h = ((h << 5) - h) + str.charCodeAt(i);
+                h |= 0;
+            }
+            return String(h);
+        }
+
+        async function loadFromGitHubJSON(forceReload = false) {
+            try {
+                const res = await fetch('./data.json?t=' + Date.now(), { cache: 'no-store' });
+                if (!res.ok) return false;
+                const rawText = await res.text();
+                const currentHash = simpleHash(rawText);
+                const lastHash = localStorage.getItem('lastGitHubJsonHash');
+
+                if (!forceReload && lastHash && lastHash === currentHash) return false;
+
+                const data = JSON.parse(rawText);
+                localStorage.setItem('lastGitHubJsonHash', currentHash);
+
+                if (data.prefs) { prefs = { ...prefs, ...data.prefs }; localStorage.setItem('myPrefs', JSON.stringify(prefs)); }
+                if (data.weatherPrefs) { weatherPrefs = { ...weatherPrefs, ...data.weatherPrefs }; localStorage.setItem('myWeatherPrefs', JSON.stringify(weatherPrefs)); }
+                if (Array.isArray(data.mainShortcuts) && data.mainShortcuts.length > 0) mainShortcuts = data.mainShortcuts;
+                if (Array.isArray(data.sbShortcuts) && data.sbShortcuts.length > 0) sbShortcuts = data.sbShortcuts;
+                if (data.wallpaper && data.wallpaper !== 'none') await dbSet('myWallpaper', data.wallpaper);
+
+                if (!prefs.manualSort) sortShortcutsAlphabetically();
+                syncToggles();
+                renderGrids();
+                fetchWeather();
+                await updateUI();
+                await persistShortcuts();
+                if (forceReload) showToast("Synced latest configuration from GitHub data.json");
+                return true;
+            } catch (err) {
+                if (forceReload) showToast("Could not load data.json (check JSON syntax)");
+                return false;
+            }
+        }
+
+        async function exportData() {
+            const data = {
+                prefs: prefs,
+                weatherPrefs: weatherPrefs,
+                wallpaper: await dbGet('myWallpaper') || localStorage.getItem('myWallpaper') || 'none',
+                sbShortcuts: sbShortcuts,
+                mainShortcuts: mainShortcuts
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", url);
+            dlAnchorElem.setAttribute("download", "data.json");
+            dlAnchorElem.click();
+            URL.revokeObjectURL(url);
+            showToast("Exported data.json");
+        }
+
+        async function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.prefs) { prefs = { ...prefs, ...data.prefs }; localStorage.setItem('myPrefs', JSON.stringify(prefs)); }
+                    if (data.weatherPrefs) { weatherPrefs = data.weatherPrefs; localStorage.setItem('myWeatherPrefs', JSON.stringify(weatherPrefs)); }
+                    if (Array.isArray(data.mainShortcuts)) mainShortcuts = data.mainShortcuts;
+                    if (Array.isArray(data.sbShortcuts)) sbShortcuts = data.sbShortcuts;
+                    if (data.wallpaper) await dbSet('myWallpaper', data.wallpaper);
+                    await persistShortcuts();
+                    window.location.reload();
+                } catch(err) { showToast("Invalid JSON file"); }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- 10. GLOBAL LISTENERS & INSTANT BOOTSTRAP ---
+        window.addEventListener('keydown', function(e) {
+            const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+            if (e.key === '/' && activeTag !== 'input' && activeTag !== 'textarea') {
+                e.preventDefault();
+                if (document.body.classList.contains('zen-mode')) toggleZenMode();
+                document.getElementById('search-input').focus();
+            } else if (e.key === 'Escape') {
+                contextMenu.style.display = 'none';
+                document.querySelectorAll('.menu-trigger.active').forEach(b => b.classList.remove('active'));
+                document.getElementById('weather-dropdown').style.display = 'none';
+                document.getElementById('engine-dropdown').style.display = 'none';
+                document.getElementById('side-panel').classList.remove('open');
+                closeAddModal();
+                closeWeatherLocModal();
+            }
+        });
+
+        window.onclick = function(event) {
+            contextMenu.style.display = 'none';
+            document.querySelectorAll('.menu-trigger.active').forEach(b => b.classList.remove('active'));
+            if (!event.target.closest('#weather-widget')) {
+                document.getElementById('weather-dropdown').style.display = 'none';
+                document.getElementById('weather-menu-btn').classList.remove('active');
+            }
+            if (!event.target.closest('.search-container')) {
+                document.getElementById('engine-dropdown').style.display = 'none';
+            }
+            const sidePanel = document.getElementById('side-panel');
+            if (sidePanel.classList.contains('open') && !event.target.closest('#side-panel') && !event.target.closest('.customize-btn')) {
+                sidePanel.classList.remove('open');
+            }
+            if (event.target === document.getElementById('add-site-overlay')) closeAddModal();
+            if (event.target === document.getElementById('weather-loc-overlay')) closeWeatherLocModal();
+        };
+
+        // 1. Synchronous Immediate Render (Guarantees page is never blank or frozen)
+        updateClock();
+        setInterval(updateClock, 1000);
+        syncToggles();
+        if (!prefs.manualSort) sortShortcutsAlphabetically();
+        renderGrids();
+        fetchWeather();
+        updateUI();
+
+        // 2. Background Async Enhancement (Loads IndexedDB & checks GitHub data.json)
+        (async function hydrateFromDB() {
+            const dbMain = await dbGet('myShortcuts');
+            if (Array.isArray(dbMain) && dbMain.length > 0) mainShortcuts = dbMain;
+            const dbSb = await dbGet('mySbShortcuts');
+            if (Array.isArray(dbSb) && dbSb.length > 0) sbShortcuts = dbSb;
+            if (!prefs.manualSort) sortShortcutsAlphabetically();
+            renderGrids();
+            await loadFromGitHubJSON(false);
+        })();
+    </script>
+</body>
+</html>
